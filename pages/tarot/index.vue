@@ -1,75 +1,112 @@
 <template>
 	<view class="container">
-		<!-- 问题输入 -->
-		<view class="question-card">
-			<view class="card-header">
-				<text class="title">塔罗占卜</text>
-				<text class="subtitle">请默念您的问题</text>
-			</view>
-			<view class="question-content">
-				<textarea v-model="question" placeholder="请输入您想问的问题..." class="question-input" />
-				<button class="submit-btn" @click="startDivination">开始占卜</button>
-			</view>
+		<!-- 星星背景 - 始终显示，但动画状态会改变 -->
+		<view class="star-background" :class="{'cosmic-bg': showCelestialShift}">
+			<!-- 星座连线 - 斗转星移模式下显示 -->
+			<view class="constellation-lines" v-if="showCelestialShift"></view>
+			<view 
+				v-for="(star, index) in stars" 
+				:key="index" 
+				class="star"
+				:class="{
+					'animate': true, 
+					'moving': isStarsMoving,
+					'celestial-shift': showCelestialShift,
+					'hexagon-shape': formCardShape, 
+					'flicker': flickerStars && flickeringIndex === index
+				}"
+				:style="{
+					left: star.x + '%',
+					top: star.y + '%',
+					width: star.size + 'rpx',
+					height: star.size + 'rpx',
+					animationDelay: (index * 0.05) + 's',
+					opacity: fadeOutStars ? 0 : 1
+				}"
+			></view>
 		</view>
 		
-		<!-- 牌阵展示 -->
-		<view class="cards-card" v-if="showResult">
-			<view class="card-header">
-				<text class="title">牌阵分析</text>
-				<text class="subtitle">{{spread.name}}</text>
+		<!-- 占卜页面内容区 -->
+		<view class="content-wrapper" :class="{'hidden': hideContent}">
+			<!-- 问题输入 -->
+			<view class="question-card">
+				<view class="card-header">
+					<text class="title">塔罗占卜</text>
+					<text class="subtitle">请默念您的问题</text>
+				</view>
+				<view class="question-content">
+					<textarea v-model="question" placeholder="请输入您想问的问题..." class="question-input" />
+					<button class="submit-btn" @click="startDivination">开始占卜</button>
+				</view>
 			</view>
-			<view class="cards-content">
-				<view class="cards-grid">
-					<view class="card-item" v-for="(card, index) in spread.cards" :key="index">
-						<view class="card-image">
-							<text class="card-name">{{card.name}}</text>
+			
+			<!-- 牌阵展示 -->
+			<view class="cards-card" v-if="showResult">
+				<view class="card-header">
+					<text class="title">牌阵分析</text>
+					<text class="subtitle">{{spread.name}}</text>
+				</view>
+				<view class="cards-content">
+					<view class="cards-grid">
+						<view class="card-item" v-for="(card, index) in spread.cards" :key="index">
+							<view class="card-image">
+								<text class="card-name">{{card.name}}</text>
+							</view>
+							<text class="card-position">{{card.position}}</text>
 						</view>
-						<text class="card-position">{{card.position}}</text>
+					</view>
+				</view>
+			</view>
+			
+			<!-- 牌意分析 -->
+			<view class="interpretation-card" v-if="showResult">
+				<view class="card-header">
+					<text class="title">牌意分析</text>
+				</view>
+				<view class="interpretation-content">
+					<view class="interpretation-item" v-for="(card, index) in spread.cards" :key="index">
+						<text class="label">{{card.position}}</text>
+						<text class="value">{{card.meaning}}</text>
+					</view>
+				</view>
+			</view>
+			
+			<!-- 综合解读 -->
+			<view class="summary-card" v-if="showResult">
+				<view class="card-header">
+					<text class="title">综合解读</text>
+				</view>
+				<view class="summary-content">
+					<view class="summary-item">
+						<text class="label">整体运势</text>
+						<text class="value">{{summary.overall}}</text>
+					</view>
+					<view class="summary-item">
+						<text class="label">建议提醒</text>
+						<text class="value">{{summary.advice}}</text>
+					</view>
+				</view>
+			</view>
+			
+			<!-- 运势提醒 -->
+			<view class="reminder-card" v-if="showResult">
+				<view class="card-header">
+					<text class="title">运势提醒</text>
+				</view>
+				<view class="reminder-content">
+					<view class="reminder-item" v-for="(item, index) in summary.reminders" :key="index">
+						<text class="icon">{{item.type === 'good' ? '✓' : '!'}}</text>
+						<text class="text">{{item.content}}</text>
 					</view>
 				</view>
 			</view>
 		</view>
 		
-		<!-- 牌意分析 -->
-		<view class="interpretation-card" v-if="showResult">
-			<view class="card-header">
-				<text class="title">牌意分析</text>
-			</view>
-			<view class="interpretation-content">
-				<view class="interpretation-item" v-for="(card, index) in spread.cards" :key="index">
-					<text class="label">{{card.position}}</text>
-					<text class="value">{{card.meaning}}</text>
-				</view>
-			</view>
-		</view>
-		
-		<!-- 综合解读 -->
-		<view class="summary-card" v-if="showResult">
-			<view class="card-header">
-				<text class="title">综合解读</text>
-			</view>
-			<view class="summary-content">
-				<view class="summary-item">
-					<text class="label">整体运势</text>
-					<text class="value">{{summary.overall}}</text>
-				</view>
-				<view class="summary-item">
-					<text class="label">建议提醒</text>
-					<text class="value">{{summary.advice}}</text>
-				</view>
-			</view>
-		</view>
-		
-		<!-- 运势提醒 -->
-		<view class="reminder-card" v-if="showResult">
-			<view class="card-header">
-				<text class="title">运势提醒</text>
-			</view>
-			<view class="reminder-content">
-				<view class="reminder-item" v-for="(item, index) in summary.reminders" :key="index">
-					<text class="icon">{{item.type === 'good' ? '✓' : '!'}}</text>
-					<text class="text">{{item.content}}</text>
-				</view>
+		<!-- 占卜过程中显示的提示 -->
+		<view class="divination-process" v-if="hideContent && !showResult">
+			<view class="process-text" :class="{'show': showProcessText}">
+				<text class="animate-text">命运之星正在为您占卜</text>
+				<text class="dots">...</text>
 			</view>
 		</view>
 	</view>
@@ -81,6 +118,25 @@ export default {
 		return {
 			question: '',
 			showResult: false,
+			// 星星动画相关状态
+			isStarsMoving: false,    // 星星是否随机运动
+			showCelestialShift: false, // 星星斗转星移效果
+			formCardShape: false,
+			flickerStars: false,
+			flickeringIndex: -1,
+			fadeOutStars: false,
+			hideContent: false,      // 是否隐藏内容
+			showProcessText: false,  // 显示占卜中文字
+			starsMovementInterval: null, // 用于保存定时器ID
+			// 生成随机星星 - 增加数量和大小变化
+			stars: Array.from({length: 150}, () => ({
+				x: Math.random() * 100,
+				y: Math.random() * 100,
+				size: 1 + Math.random() * 3,
+				speedX: (Math.random() - 0.5) * 0.2,
+				speedY: (Math.random() - 0.5) * 0.2,
+				rotation: Math.random() * 360 // 添加旋转角度属性
+			})),
 			spread: {
 				name: '三张牌阵',
 				cards: [
@@ -112,7 +168,75 @@ export default {
 			}
 		}
 	},
+	mounted() {
+		// 启动星星慢速随机运动
+		this.startStarsMovement();
+		
+		// 优化性能，页面显示时才运行动画
+		uni.onWindowResize(() => {
+			if (this.starsMovementInterval) {
+				clearInterval(this.starsMovementInterval);
+				this.startStarsMovement();
+			}
+		});
+	},
+	
+	beforeDestroy() {
+		// 组件销毁前清除定时器，防止内存泄漏
+		if (this.starsMovementInterval) {
+			clearInterval(this.starsMovementInterval);
+			this.starsMovementInterval = null;
+		}
+	},
+	
 	methods: {
+		// 星星随机运动
+		startStarsMovement() {
+			// 清除可能存在的旧定时器
+			if (this.starsMovementInterval) {
+				clearInterval(this.starsMovementInterval);
+			}
+			
+			this.starsMovementInterval = setInterval(() => {
+				if (!this.isStarsMoving && !this.showCelestialShift) return;
+				
+				this.stars.forEach(star => {
+					// 正常移动模式
+					if (this.isStarsMoving && !this.showCelestialShift) {
+						star.x += star.speedX;
+						star.y += star.speedY;
+						
+						// 边界处理 - 更平滑的循环
+						if (star.x > 105) star.x = -5;
+						if (star.x < -5) star.x = 105;
+						if (star.y > 105) star.y = -5;
+						if (star.y < -5) star.y = 105;
+						
+						// 缓慢旋转
+						star.rotation = (star.rotation + 0.1) % 360;
+					}
+					
+					// 斗转星移模式 - 更激烈的运动
+					if (this.showCelestialShift) {
+						star.x += star.speedX * 5;
+						star.y += star.speedY * 5;
+						
+						// 加速旋转并在屏幕边缘重新生成
+						star.rotation = (star.rotation + 2) % 360;
+						
+						// 在屏幕边缘重新生成
+						if (star.x > 105 || star.x < -5 || star.y > 105 || star.y < -5) {
+							star.x = Math.random() * 100;
+							star.y = Math.random() * 100;
+							star.speedX = (Math.random() - 0.5) * 0.4;
+							star.speedY = (Math.random() - 0.5) * 0.4;
+							star.size = 1 + Math.random() * 3; // 随机改变大小
+						}
+					}
+				});
+			}, 50); // 50毫秒更新一次位置
+		},
+		
 		startDivination() {
 			if (!this.question) {
 				uni.showToast({
@@ -121,13 +245,444 @@ export default {
 				})
 				return
 			}
-			this.showResult = true
+			
+			// 重置所有状态，确保每次占卜都是新的开始
+			this.showResult = false;
+			this.formCardShape = false;
+			this.flickerStars = false;
+			this.fadeOutStars = false;
+			
+			// 1. 隐藏所有内容
+			this.hideContent = true;
+			
+			// 2. 先显示星星随机移动，速度适中
+			this.isStarsMoving = true;
+			
+			// 3. 半秒后显示占卜中提示
+			setTimeout(() => {
+				this.showProcessText = true;
+				
+				// 4. 1.5秒后开始斗转星移效果
+				setTimeout(() => {
+					this.showCelestialShift = true;
+					
+					// 5. 1秒后六边形形成
+					setTimeout(() => {
+						this.formCardShape = true;
+						
+						// 6. 0.5秒后开始闪烁效果
+						setTimeout(() => {
+							this.startFlickering();
+							
+							// 7. 2-3秒后淡出星星效果
+							const fadeOutTime = 2000 + Math.random() * 1000;
+							setTimeout(() => {
+								this.fadeOutStars = true;
+								
+								// 8. 动画结束后显示结果
+								setTimeout(() => {
+									// 重置动画状态
+									this.isStarsMoving = false;
+									this.showCelestialShift = false;
+									this.formCardShape = false;
+									this.flickerStars = false;
+									this.fadeOutStars = false;
+									
+									// 显示结果并隐藏提示
+									this.showResult = true;
+									this.hideContent = false;
+									this.showProcessText = false;
+									this.flickeringIndex = -1;
+								}, 1000);
+							}, fadeOutTime);
+						}, 500);
+					}, 1000);
+				}, 1500);
+			}, 500);
+		},
+		
+		startFlickering() {
+			this.flickerStars = true;
+			this.flickerSequence();
+		},
+		
+		flickerSequence() {
+			// 随机选择一个星星闪烁
+			const randomIndex = Math.floor(Math.random() * this.stars.length);
+			this.flickeringIndex = randomIndex;
+			
+			// 300-600ms后选择另一个星星闪烁
+			setTimeout(() => {
+				if (this.flickerStars && !this.fadeOutStars) {
+					this.flickerSequence();
+				}
+			}, 300 + Math.random() * 300);
 		}
 	}
 }
 </script>
 
 <style>
+/* 星星背景样式 */
+.star-background {
+	position: fixed;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	z-index: 10;
+	pointer-events: none;
+	background-color: rgba(0, 0, 0, 0.1);
+}
+
+.star {
+	position: absolute;
+	width: 4rpx;
+	height: 4rpx;
+	background-color: #fff;
+	border-radius: 50%;
+	opacity: 0.7;
+	transition: opacity 1s ease;
+	box-shadow: 0 0 3rpx #fff;
+	transform-origin: center;
+}
+
+.star.animate {
+	animation: twinkle 3s infinite alternate;
+}
+
+/* 星星随机运动 */
+.star.moving {
+	transition: none; /* 取消渐变让运动更流畅 */
+}
+
+/* 斗转星移效果 */
+.star.celestial-shift {
+	transition: none;
+	box-shadow: 0 0 8rpx 2rpx rgba(255, 255, 255, 0.8);
+	animation: rotate 8s linear infinite;
+}
+
+@keyframes rotate {
+	from { transform: rotate(0deg) translate(3px) rotate(0deg); }
+	to { transform: rotate(360deg) translate(3px) rotate(-360deg); }
+}
+
+/* 宇宙背景效果 */
+.cosmic-bg {
+	background: radial-gradient(ellipse at center, rgba(15, 10, 38, 0.2) 0%, rgba(10, 5, 25, 0.4) 100%);
+	animation: cosmic-pulse 10s infinite alternate;
+}
+
+@keyframes cosmic-pulse {
+	0% {
+		background-size: 100% 100%;
+	}
+	50% {
+		background-size: 120% 120%;
+	}
+	100% {
+		background-size: 100% 100%;
+	}
+}
+
+/* 星座连线效果 */
+.constellation-lines {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	background-image: 
+		radial-gradient(circle at 25% 35%, rgba(120, 120, 255, 0.2) 0.5%, transparent 2%),
+		radial-gradient(circle at 75% 35%, rgba(120, 120, 255, 0.2) 0.5%, transparent 2%),
+		radial-gradient(circle at 75% 65%, rgba(120, 120, 255, 0.2) 0.5%, transparent 2%),
+		radial-gradient(circle at 50% 80%, rgba(120, 120, 255, 0.2) 0.5%, transparent 2%),
+		radial-gradient(circle at 25% 65%, rgba(120, 120, 255, 0.2) 0.5%, transparent 2%),
+		radial-gradient(circle at 50% 20%, rgba(120, 120, 255, 0.2) 0.5%, transparent 2%);
+	opacity: 0;
+	animation: constellation-fade 3s forwards;
+}
+
+.constellation-lines::before {
+	content: "";
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	background: 
+		linear-gradient(to bottom right, transparent 49.5%, rgba(150, 150, 255, 0.1) 49.8%, rgba(150, 150, 255, 0.1) 50.2%, transparent 50.5%) no-repeat,
+		linear-gradient(to bottom left, transparent 49.5%, rgba(150, 150, 255, 0.1) 49.8%, rgba(150, 150, 255, 0.1) 50.2%, transparent 50.5%) no-repeat,
+		linear-gradient(to top, transparent 49.5%, rgba(150, 150, 255, 0.1) 49.8%, rgba(150, 150, 255, 0.1) 50.2%, transparent 50.5%) no-repeat;
+	background-size: 
+		50% 50%,
+		50% 50%,
+		100% 100%;
+	background-position: 
+		right top,
+		left top,
+		center bottom;
+	opacity: 0;
+	animation: lines-appear 2.5s 0.5s forwards;
+}
+
+@keyframes constellation-fade {
+	0% { opacity: 0; }
+	50% { opacity: 0.3; }
+	100% { opacity: 0.2; }
+}
+
+@keyframes lines-appear {
+	0% { opacity: 0; }
+	100% { opacity: 1; }
+}
+
+.star.hexagon-shape {
+	transform: translate(-50%, -50%);
+}
+
+/* 内容隐藏与显示的样式 */
+.content-wrapper {
+	position: relative;
+	z-index: 20;
+	opacity: 1;
+	transition: opacity 0.5s ease;
+}
+
+.content-wrapper.hidden {
+	opacity: 0;
+	pointer-events: none;
+}
+
+/* 占卜过程文字提示 */
+.divination-process {
+	position: fixed;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	z-index: 15;
+}
+
+.process-text {
+	font-size: 36rpx;
+	color: #ffd700;
+	text-shadow: 0 0 10rpx rgba(255, 215, 0, 0.5);
+	opacity: 0;
+	transition: opacity 1s ease;
+	background-color: rgba(0,0,0,0.3);
+	padding: 30rpx 50rpx;
+	border-radius: 50rpx;
+	backdrop-filter: blur(5rpx);
+	display: flex;
+	align-items: center;
+}
+
+.process-text.show {
+	opacity: 1;
+}
+
+.animate-text {
+	background: linear-gradient(90deg, #ffd700, #fff, #ffd700);
+	background-size: 200% auto;
+	background-clip: text;
+	-webkit-background-clip: text;
+	-webkit-text-fill-color: transparent;
+	animation: shine 3s linear infinite;
+}
+
+.dots {
+	overflow: hidden;
+	display: inline-block;
+	vertical-align: bottom;
+	animation: dots 1.5s steps(4, end) infinite;
+	width: 30rpx;
+}
+
+@keyframes shine {
+	0% {
+		background-position: 0% center;
+	}
+	100% {
+		background-position: 200% center;
+	}
+}
+
+@keyframes dots {
+	0%, 20% {
+		content: "";
+	}
+	40% {
+		content: ".";
+	}
+	60% {
+		content: "..";
+	}
+	80%, 100% {
+		content: "...";
+	}
+}
+
+/* 星星组成六边形的位置数据 */
+/* 六边形顶点 */
+.star:nth-child(6n + 0).hexagon-shape { left: 50%; top: 20%; }
+.star:nth-child(6n + 1).hexagon-shape { left: 75%; top: 35%; }
+.star:nth-child(6n + 2).hexagon-shape { left: 75%; top: 65%; }
+.star:nth-child(6n + 3).hexagon-shape { left: 50%; top: 80%; }
+.star:nth-child(6n + 4).hexagon-shape { left: 25%; top: 65%; }
+.star:nth-child(6n + 5).hexagon-shape { left: 25%; top: 35%; }
+
+/* 六边形边线 */
+.star:nth-child(12n + 6).hexagon-shape { left: 35%; top: 25%; }
+.star:nth-child(12n + 7).hexagon-shape { left: 65%; top: 25%; }
+.star:nth-child(12n + 8).hexagon-shape { left: 65%; top: 75%; }
+.star:nth-child(12n + 9).hexagon-shape { left: 35%; top: 75%; }
+.star:nth-child(12n + 10).hexagon-shape { left: 20%; top: 50%; }
+.star:nth-child(12n + 11).hexagon-shape { left: 80%; top: 50%; }
+
+/* 内部填充 - 固定位置 */
+.star:nth-child(18).hexagon-shape { left: 40%; top: 30%; }
+.star:nth-child(19).hexagon-shape { left: 44%; top: 30%; }
+.star:nth-child(20).hexagon-shape { left: 48%; top: 30%; }
+.star:nth-child(21).hexagon-shape { left: 52%; top: 30%; }
+.star:nth-child(22).hexagon-shape { left: 56%; top: 30%; }
+.star:nth-child(23).hexagon-shape { left: 60%; top: 30%; }
+
+.star:nth-child(24).hexagon-shape { left: 40%; top: 40%; }
+.star:nth-child(25).hexagon-shape { left: 44%; top: 40%; }
+.star:nth-child(26).hexagon-shape { left: 48%; top: 40%; }
+.star:nth-child(27).hexagon-shape { left: 52%; top: 40%; }
+.star:nth-child(28).hexagon-shape { left: 56%; top: 40%; }
+.star:nth-child(29).hexagon-shape { left: 60%; top: 40%; }
+
+.star:nth-child(30).hexagon-shape { left: 40%; top: 50%; }
+.star:nth-child(31).hexagon-shape { left: 44%; top: 50%; }
+.star:nth-child(32).hexagon-shape { left: 48%; top: 50%; }
+.star:nth-child(33).hexagon-shape { left: 52%; top: 50%; }
+.star:nth-child(34).hexagon-shape { left: 56%; top: 50%; }
+.star:nth-child(35).hexagon-shape { left: 60%; top: 50%; }
+
+/* 中心点和其他内部星星 - 固定位置 */
+.star:nth-child(36).hexagon-shape { left: 45%; top: 40%; }
+.star:nth-child(37).hexagon-shape { left: 47%; top: 40%; }
+.star:nth-child(38).hexagon-shape { left: 49%; top: 40%; }
+.star:nth-child(39).hexagon-shape { left: 51%; top: 40%; }
+.star:nth-child(40).hexagon-shape { left: 53%; top: 40%; }
+.star:nth-child(41).hexagon-shape { left: 55%; top: 40%; }
+
+.star:nth-child(42).hexagon-shape { left: 45%; top: 44%; }
+.star:nth-child(43).hexagon-shape { left: 47%; top: 44%; }
+.star:nth-child(44).hexagon-shape { left: 49%; top: 44%; }
+.star:nth-child(45).hexagon-shape { left: 51%; top: 44%; }
+.star:nth-child(46).hexagon-shape { left: 53%; top: 44%; }
+.star:nth-child(47).hexagon-shape { left: 55%; top: 44%; }
+
+.star:nth-child(48).hexagon-shape { left: 45%; top: 48%; }
+.star:nth-child(49).hexagon-shape { left: 47%; top: 48%; }
+.star:nth-child(50).hexagon-shape { left: 49%; top: 48%; }
+.star:nth-child(51).hexagon-shape { left: 51%; top: 48%; }
+.star:nth-child(52).hexagon-shape { left: 53%; top: 48%; }
+.star:nth-child(53).hexagon-shape { left: 55%; top: 48%; }
+
+.star:nth-child(54).hexagon-shape { left: 45%; top: 52%; }
+.star:nth-child(55).hexagon-shape { left: 47%; top: 52%; }
+.star:nth-child(56).hexagon-shape { left: 49%; top: 52%; }
+.star:nth-child(57).hexagon-shape { left: 51%; top: 52%; }
+.star:nth-child(58).hexagon-shape { left: 53%; top: 52%; }
+.star:nth-child(59).hexagon-shape { left: 55%; top: 52%; }
+
+.star:nth-child(60).hexagon-shape { left: 45%; top: 56%; }
+.star:nth-child(61).hexagon-shape { left: 47%; top: 56%; }
+.star:nth-child(62).hexagon-shape { left: 49%; top: 56%; }
+.star:nth-child(63).hexagon-shape { left: 51%; top: 56%; }
+.star:nth-child(64).hexagon-shape { left: 53%; top: 56%; }
+.star:nth-child(65).hexagon-shape { left: 55%; top: 56%; }
+
+/* 其他星星 */
+.star:nth-child(66).hexagon-shape { left: 35%; top: 35%; }
+.star:nth-child(67).hexagon-shape { left: 40%; top: 35%; }
+.star:nth-child(68).hexagon-shape { left: 45%; top: 35%; }
+.star:nth-child(69).hexagon-shape { left: 50%; top: 35%; }
+.star:nth-child(70).hexagon-shape { left: 55%; top: 35%; }
+.star:nth-child(71).hexagon-shape { left: 60%; top: 35%; }
+.star:nth-child(72).hexagon-shape { left: 65%; top: 35%; }
+
+.star:nth-child(73).hexagon-shape { left: 35%; top: 45%; }
+.star:nth-child(74).hexagon-shape { left: 40%; top: 45%; }
+.star:nth-child(75).hexagon-shape { left: 45%; top: 45%; }
+.star:nth-child(76).hexagon-shape { left: 50%; top: 45%; }
+.star:nth-child(77).hexagon-shape { left: 55%; top: 45%; }
+.star:nth-child(78).hexagon-shape { left: 60%; top: 45%; }
+.star:nth-child(79).hexagon-shape { left: 65%; top: 45%; }
+
+.star:nth-child(80).hexagon-shape { left: 35%; top: 55%; }
+.star:nth-child(81).hexagon-shape { left: 40%; top: 55%; }
+.star:nth-child(82).hexagon-shape { left: 45%; top: 55%; }
+.star:nth-child(83).hexagon-shape { left: 50%; top: 55%; }
+.star:nth-child(84).hexagon-shape { left: 55%; top: 55%; }
+.star:nth-child(85).hexagon-shape { left: 60%; top: 55%; }
+.star:nth-child(86).hexagon-shape { left: 65%; top: 55%; }
+
+.star:nth-child(87).hexagon-shape { left: 35%; top: 65%; }
+.star:nth-child(88).hexagon-shape { left: 40%; top: 65%; }
+.star:nth-child(89).hexagon-shape { left: 45%; top: 65%; }
+.star:nth-child(90).hexagon-shape { left: 50%; top: 65%; }
+.star:nth-child(91).hexagon-shape { left: 55%; top: 65%; }
+.star:nth-child(92).hexagon-shape { left: 60%; top: 65%; }
+.star:nth-child(93).hexagon-shape { left: 65%; top: 65%; }
+
+.star:nth-child(94).hexagon-shape { left: 45%; top: 60%; }
+.star:nth-child(95).hexagon-shape { left: 50%; top: 60%; }
+.star:nth-child(96).hexagon-shape { left: 55%; top: 60%; }
+.star:nth-child(97).hexagon-shape { left: 47%; top: 65%; }
+.star:nth-child(98).hexagon-shape { left: 50%; top: 70%; }
+.star:nth-child(99).hexagon-shape { left: 53%; top: 65%; }
+
+/* 闪烁效果 */
+.star.flicker {
+	animation: flicker 0.5s infinite alternate;
+	background-color: #ffd700;
+	box-shadow: 0 0 10rpx 2rpx #ffd700;
+	z-index: 11;
+}
+
+@keyframes twinkle {
+	0% {
+		opacity: 0.3;
+		transform: scale(0.8);
+	}
+	50% {
+		opacity: 0.6;
+		transform: scale(0.9);
+	}
+	100% {
+		opacity: 1;
+		transform: scale(1);
+	}
+}
+
+@keyframes flicker {
+	0% {
+		opacity: 0.5;
+		transform: scale(1);
+		box-shadow: 0 0 5rpx #ffd700;
+	}
+	50% {
+		opacity: 1;
+		transform: scale(1.8);
+		box-shadow: 0 0 15rpx 5rpx #ffd700;
+	}
+	100% {
+		opacity: 0.8;
+		transform: scale(1.5);
+		box-shadow: 0 0 10rpx 3rpx #ffd700;
+	}
+}
+
 .container {
 	min-height: 100vh;
 	background: linear-gradient(135deg, #1a0b2e 0%, #2a1b3e 50%, #3a2b4e 100%);
@@ -291,4 +846,4 @@ export default {
 	font-size: 28rpx;
 	color: #e6d5ff;
 }
-</style> 
+</style>

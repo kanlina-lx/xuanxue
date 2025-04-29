@@ -1,4 +1,438 @@
 
+/* 星星背景样式 */
+.star-background {
+	position: fixed;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	z-index: 10;
+	pointer-events: none;
+	background-color: rgba(0, 0, 0, 0.1);
+}
+.star {
+	position: absolute;
+	width: 4rpx;
+	height: 4rpx;
+	background-color: #fff;
+	border-radius: 50%;
+	opacity: 0.7;
+	transition: opacity 1s ease;
+	box-shadow: 0 0 3rpx #fff;
+	transform-origin: center;
+}
+.star.animate {
+	animation: twinkle 3s infinite alternate;
+}
+
+/* 星星随机运动 */
+.star.moving {
+	transition: none; /* 取消渐变让运动更流畅 */
+}
+
+/* 斗转星移效果 */
+.star.celestial-shift {
+	transition: none;
+	box-shadow: 0 0 8rpx 2rpx rgba(255, 255, 255, 0.8);
+	animation: rotate 8s linear infinite;
+}
+@keyframes rotate {
+from { transform: rotate(0deg) translate(3px) rotate(0deg);
+}
+to { transform: rotate(360deg) translate(3px) rotate(-360deg);
+}
+}
+
+/* 宇宙背景效果 */
+.cosmic-bg {
+	background: radial-gradient(ellipse at center, rgba(15, 10, 38, 0.2) 0%, rgba(10, 5, 25, 0.4) 100%);
+	animation: cosmic-pulse 10s infinite alternate;
+}
+@keyframes cosmic-pulse {
+0% {
+		background-size: 100% 100%;
+}
+50% {
+		background-size: 120% 120%;
+}
+100% {
+		background-size: 100% 100%;
+}
+}
+
+/* 星座连线效果 */
+.constellation-lines {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	background-image: 
+		radial-gradient(circle at 25% 35%, rgba(120, 120, 255, 0.2) 0.5%, transparent 2%),
+		radial-gradient(circle at 75% 35%, rgba(120, 120, 255, 0.2) 0.5%, transparent 2%),
+		radial-gradient(circle at 75% 65%, rgba(120, 120, 255, 0.2) 0.5%, transparent 2%),
+		radial-gradient(circle at 50% 80%, rgba(120, 120, 255, 0.2) 0.5%, transparent 2%),
+		radial-gradient(circle at 25% 65%, rgba(120, 120, 255, 0.2) 0.5%, transparent 2%),
+		radial-gradient(circle at 50% 20%, rgba(120, 120, 255, 0.2) 0.5%, transparent 2%);
+	opacity: 0;
+	animation: constellation-fade 3s forwards;
+}
+.constellation-lines::before {
+	content: "";
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	background: 
+		linear-gradient(to bottom right, transparent 49.5%, rgba(150, 150, 255, 0.1) 49.8%, rgba(150, 150, 255, 0.1) 50.2%, transparent 50.5%) no-repeat,
+		linear-gradient(to bottom left, transparent 49.5%, rgba(150, 150, 255, 0.1) 49.8%, rgba(150, 150, 255, 0.1) 50.2%, transparent 50.5%) no-repeat,
+		linear-gradient(to top, transparent 49.5%, rgba(150, 150, 255, 0.1) 49.8%, rgba(150, 150, 255, 0.1) 50.2%, transparent 50.5%) no-repeat;
+	background-size: 
+		50% 50%,
+		50% 50%,
+		100% 100%;
+	background-position: 
+		right top,
+		left top,
+		center bottom;
+	opacity: 0;
+	animation: lines-appear 2.5s 0.5s forwards;
+}
+@keyframes constellation-fade {
+0% { opacity: 0;
+}
+50% { opacity: 0.3;
+}
+100% { opacity: 0.2;
+}
+}
+@keyframes lines-appear {
+0% { opacity: 0;
+}
+100% { opacity: 1;
+}
+}
+.star.hexagon-shape {
+	transform: translate(-50%, -50%);
+}
+
+/* 内容隐藏与显示的样式 */
+.content-wrapper {
+	position: relative;
+	z-index: 20;
+	opacity: 1;
+	transition: opacity 0.5s ease;
+}
+.content-wrapper.hidden {
+	opacity: 0;
+	pointer-events: none;
+}
+
+/* 占卜过程文字提示 */
+.divination-process {
+	position: fixed;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	z-index: 15;
+}
+.process-text {
+	font-size: 36rpx;
+	color: #ffd700;
+	text-shadow: 0 0 10rpx rgba(255, 215, 0, 0.5);
+	opacity: 0;
+	transition: opacity 1s ease;
+	background-color: rgba(0,0,0,0.3);
+	padding: 30rpx 50rpx;
+	border-radius: 50rpx;
+	-webkit-backdrop-filter: blur(5rpx);
+	        backdrop-filter: blur(5rpx);
+	display: flex;
+	align-items: center;
+}
+.process-text.show {
+	opacity: 1;
+}
+.animate-text {
+	background: linear-gradient(90deg, #ffd700, #fff, #ffd700);
+	background-size: 200% auto;
+	background-clip: text;
+	-webkit-background-clip: text;
+	-webkit-text-fill-color: transparent;
+	animation: shine 3s linear infinite;
+}
+.dots {
+	overflow: hidden;
+	display: inline-block;
+	vertical-align: bottom;
+	animation: dots 1.5s steps(4, end) infinite;
+	width: 30rpx;
+}
+@keyframes shine {
+0% {
+		background-position: 0% center;
+}
+100% {
+		background-position: 200% center;
+}
+}
+@keyframes dots {
+0%, 20% {
+		content: "";
+}
+40% {
+		content: ".";
+}
+60% {
+		content: "..";
+}
+80%, 100% {
+		content: "...";
+}
+}
+
+/* 星星组成六边形的位置数据 */
+/* 六边形顶点 */
+.star:nth-child(6n + 0).hexagon-shape { left: 50%; top: 20%;
+}
+.star:nth-child(6n + 1).hexagon-shape { left: 75%; top: 35%;
+}
+.star:nth-child(6n + 2).hexagon-shape { left: 75%; top: 65%;
+}
+.star:nth-child(6n + 3).hexagon-shape { left: 50%; top: 80%;
+}
+.star:nth-child(6n + 4).hexagon-shape { left: 25%; top: 65%;
+}
+.star:nth-child(6n + 5).hexagon-shape { left: 25%; top: 35%;
+}
+
+/* 六边形边线 */
+.star:nth-child(12n + 6).hexagon-shape { left: 35%; top: 25%;
+}
+.star:nth-child(12n + 7).hexagon-shape { left: 65%; top: 25%;
+}
+.star:nth-child(12n + 8).hexagon-shape { left: 65%; top: 75%;
+}
+.star:nth-child(12n + 9).hexagon-shape { left: 35%; top: 75%;
+}
+.star:nth-child(12n + 10).hexagon-shape { left: 20%; top: 50%;
+}
+.star:nth-child(12n + 11).hexagon-shape { left: 80%; top: 50%;
+}
+
+/* 内部填充 - 固定位置 */
+.star:nth-child(18).hexagon-shape { left: 40%; top: 30%;
+}
+.star:nth-child(19).hexagon-shape { left: 44%; top: 30%;
+}
+.star:nth-child(20).hexagon-shape { left: 48%; top: 30%;
+}
+.star:nth-child(21).hexagon-shape { left: 52%; top: 30%;
+}
+.star:nth-child(22).hexagon-shape { left: 56%; top: 30%;
+}
+.star:nth-child(23).hexagon-shape { left: 60%; top: 30%;
+}
+.star:nth-child(24).hexagon-shape { left: 40%; top: 40%;
+}
+.star:nth-child(25).hexagon-shape { left: 44%; top: 40%;
+}
+.star:nth-child(26).hexagon-shape { left: 48%; top: 40%;
+}
+.star:nth-child(27).hexagon-shape { left: 52%; top: 40%;
+}
+.star:nth-child(28).hexagon-shape { left: 56%; top: 40%;
+}
+.star:nth-child(29).hexagon-shape { left: 60%; top: 40%;
+}
+.star:nth-child(30).hexagon-shape { left: 40%; top: 50%;
+}
+.star:nth-child(31).hexagon-shape { left: 44%; top: 50%;
+}
+.star:nth-child(32).hexagon-shape { left: 48%; top: 50%;
+}
+.star:nth-child(33).hexagon-shape { left: 52%; top: 50%;
+}
+.star:nth-child(34).hexagon-shape { left: 56%; top: 50%;
+}
+.star:nth-child(35).hexagon-shape { left: 60%; top: 50%;
+}
+
+/* 中心点和其他内部星星 - 固定位置 */
+.star:nth-child(36).hexagon-shape { left: 45%; top: 40%;
+}
+.star:nth-child(37).hexagon-shape { left: 47%; top: 40%;
+}
+.star:nth-child(38).hexagon-shape { left: 49%; top: 40%;
+}
+.star:nth-child(39).hexagon-shape { left: 51%; top: 40%;
+}
+.star:nth-child(40).hexagon-shape { left: 53%; top: 40%;
+}
+.star:nth-child(41).hexagon-shape { left: 55%; top: 40%;
+}
+.star:nth-child(42).hexagon-shape { left: 45%; top: 44%;
+}
+.star:nth-child(43).hexagon-shape { left: 47%; top: 44%;
+}
+.star:nth-child(44).hexagon-shape { left: 49%; top: 44%;
+}
+.star:nth-child(45).hexagon-shape { left: 51%; top: 44%;
+}
+.star:nth-child(46).hexagon-shape { left: 53%; top: 44%;
+}
+.star:nth-child(47).hexagon-shape { left: 55%; top: 44%;
+}
+.star:nth-child(48).hexagon-shape { left: 45%; top: 48%;
+}
+.star:nth-child(49).hexagon-shape { left: 47%; top: 48%;
+}
+.star:nth-child(50).hexagon-shape { left: 49%; top: 48%;
+}
+.star:nth-child(51).hexagon-shape { left: 51%; top: 48%;
+}
+.star:nth-child(52).hexagon-shape { left: 53%; top: 48%;
+}
+.star:nth-child(53).hexagon-shape { left: 55%; top: 48%;
+}
+.star:nth-child(54).hexagon-shape { left: 45%; top: 52%;
+}
+.star:nth-child(55).hexagon-shape { left: 47%; top: 52%;
+}
+.star:nth-child(56).hexagon-shape { left: 49%; top: 52%;
+}
+.star:nth-child(57).hexagon-shape { left: 51%; top: 52%;
+}
+.star:nth-child(58).hexagon-shape { left: 53%; top: 52%;
+}
+.star:nth-child(59).hexagon-shape { left: 55%; top: 52%;
+}
+.star:nth-child(60).hexagon-shape { left: 45%; top: 56%;
+}
+.star:nth-child(61).hexagon-shape { left: 47%; top: 56%;
+}
+.star:nth-child(62).hexagon-shape { left: 49%; top: 56%;
+}
+.star:nth-child(63).hexagon-shape { left: 51%; top: 56%;
+}
+.star:nth-child(64).hexagon-shape { left: 53%; top: 56%;
+}
+.star:nth-child(65).hexagon-shape { left: 55%; top: 56%;
+}
+
+/* 其他星星 */
+.star:nth-child(66).hexagon-shape { left: 35%; top: 35%;
+}
+.star:nth-child(67).hexagon-shape { left: 40%; top: 35%;
+}
+.star:nth-child(68).hexagon-shape { left: 45%; top: 35%;
+}
+.star:nth-child(69).hexagon-shape { left: 50%; top: 35%;
+}
+.star:nth-child(70).hexagon-shape { left: 55%; top: 35%;
+}
+.star:nth-child(71).hexagon-shape { left: 60%; top: 35%;
+}
+.star:nth-child(72).hexagon-shape { left: 65%; top: 35%;
+}
+.star:nth-child(73).hexagon-shape { left: 35%; top: 45%;
+}
+.star:nth-child(74).hexagon-shape { left: 40%; top: 45%;
+}
+.star:nth-child(75).hexagon-shape { left: 45%; top: 45%;
+}
+.star:nth-child(76).hexagon-shape { left: 50%; top: 45%;
+}
+.star:nth-child(77).hexagon-shape { left: 55%; top: 45%;
+}
+.star:nth-child(78).hexagon-shape { left: 60%; top: 45%;
+}
+.star:nth-child(79).hexagon-shape { left: 65%; top: 45%;
+}
+.star:nth-child(80).hexagon-shape { left: 35%; top: 55%;
+}
+.star:nth-child(81).hexagon-shape { left: 40%; top: 55%;
+}
+.star:nth-child(82).hexagon-shape { left: 45%; top: 55%;
+}
+.star:nth-child(83).hexagon-shape { left: 50%; top: 55%;
+}
+.star:nth-child(84).hexagon-shape { left: 55%; top: 55%;
+}
+.star:nth-child(85).hexagon-shape { left: 60%; top: 55%;
+}
+.star:nth-child(86).hexagon-shape { left: 65%; top: 55%;
+}
+.star:nth-child(87).hexagon-shape { left: 35%; top: 65%;
+}
+.star:nth-child(88).hexagon-shape { left: 40%; top: 65%;
+}
+.star:nth-child(89).hexagon-shape { left: 45%; top: 65%;
+}
+.star:nth-child(90).hexagon-shape { left: 50%; top: 65%;
+}
+.star:nth-child(91).hexagon-shape { left: 55%; top: 65%;
+}
+.star:nth-child(92).hexagon-shape { left: 60%; top: 65%;
+}
+.star:nth-child(93).hexagon-shape { left: 65%; top: 65%;
+}
+.star:nth-child(94).hexagon-shape { left: 45%; top: 60%;
+}
+.star:nth-child(95).hexagon-shape { left: 50%; top: 60%;
+}
+.star:nth-child(96).hexagon-shape { left: 55%; top: 60%;
+}
+.star:nth-child(97).hexagon-shape { left: 47%; top: 65%;
+}
+.star:nth-child(98).hexagon-shape { left: 50%; top: 70%;
+}
+.star:nth-child(99).hexagon-shape { left: 53%; top: 65%;
+}
+
+/* 闪烁效果 */
+.star.flicker {
+	animation: flicker 0.5s infinite alternate;
+	background-color: #ffd700;
+	box-shadow: 0 0 10rpx 2rpx #ffd700;
+	z-index: 11;
+}
+@keyframes twinkle {
+0% {
+		opacity: 0.3;
+		transform: scale(0.8);
+}
+50% {
+		opacity: 0.6;
+		transform: scale(0.9);
+}
+100% {
+		opacity: 1;
+		transform: scale(1);
+}
+}
+@keyframes flicker {
+0% {
+		opacity: 0.5;
+		transform: scale(1);
+		box-shadow: 0 0 5rpx #ffd700;
+}
+50% {
+		opacity: 1;
+		transform: scale(1.8);
+		box-shadow: 0 0 15rpx 5rpx #ffd700;
+}
+100% {
+		opacity: 0.8;
+		transform: scale(1.5);
+		box-shadow: 0 0 10rpx 3rpx #ffd700;
+}
+}
 .container {
 	min-height: 100vh;
 	background: linear-gradient(135deg, #1a0b2e 0%, #2a1b3e 50%, #3a2b4e 100%);
