@@ -1,0 +1,41 @@
+{
+  "pages": [
+    "pages/index/index",
+    "pages/daily/index",
+    "pages/user/index",
+    "pages/love/index",
+    "pages/birth/index",
+    "pages/gods/index",
+    "pages/iching/index",
+    "pages/dream/index",
+    "pages/star/index",
+    "pages/tarot/index"
+  ],
+  "window": {
+    "navigationBarTextStyle": "white",
+    "navigationBarTitleText": "玄学运势",
+    "navigationBarBackgroundColor": "#1a0b2e",
+    "backgroundColor": "#1a0b2e"
+  },
+  "tabBar": {
+    "color": "#999999",
+    "selectedColor": "#ffd700",
+    "backgroundColor": "#1a0b2e",
+    "borderStyle": "black",
+    "list": [
+      {
+        "pagePath": "pages/index/index",
+        "text": "首页",
+        "iconPath": "static/images/home.png",
+        "selectedIconPath": "static/images/home-active.png"
+      },
+      {
+        "pagePath": "pages/user/index",
+        "text": "个人中心",
+        "iconPath": "static/images/user.png",
+        "selectedIconPath": "static/images/user-active.png"
+      }
+    ]
+  },
+  "usingComponents": {}
+}

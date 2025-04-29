@@ -1,0 +1,105 @@
+{
+	"pages": [ //pages数组中第一项表示应用启动页，参考：https://uniapp.dcloud.io/collocation/pages
+		{
+			"path": "pages/index/index",
+			"style": {
+				"navigationBarTitleText": "玄学运势"
+			}
+		},
+		{
+			"path": "pages/daily/index",
+			"style": {
+				"navigationBarTitleText": "今日运势"
+			}
+		},
+		{
+			"path": "pages/user/index",
+			"style": {
+				"navigationBarTitleText": "个人中心"
+			}
+		},
+		{
+			"path": "pages/love/index",
+			"style": {
+				"navigationBarTitleText": "正缘分析",
+				"navigationBarBackgroundColor": "#1a0b2e",
+				"navigationBarTextStyle": "white"
+			}
+		},
+		{
+			"path": "pages/birth/index",
+			"style": {
+				"navigationBarTitleText": "生辰四柱",
+				"navigationBarBackgroundColor": "#1a0b2e",
+				"navigationBarTextStyle": "white"
+			}
+		},
+		{
+			"path": "pages/gods/index",
+			"style": {
+				"navigationBarTitleText": "十神分析",
+				"navigationBarBackgroundColor": "#1a0b2e",
+				"navigationBarTextStyle": "white"
+			}
+		},
+		{
+			"path": "pages/iching/index",
+			"style": {
+				"navigationBarTitleText": "周易占卜",
+				"navigationBarBackgroundColor": "#1a0b2e",
+				"navigationBarTextStyle": "white"
+			}
+		},
+		{
+			"path": "pages/dream/index",
+			"style": {
+				"navigationBarTitleText": "周公解梦",
+				"navigationBarBackgroundColor": "#1a0b2e",
+				"navigationBarTextStyle": "white"
+			}
+		},
+		{
+			"path": "pages/star/index",
+			"style": {
+				"navigationBarTitleText": "星座运势",
+				"navigationBarBackgroundColor": "#1a0b2e",
+				"navigationBarTextStyle": "white"
+			}
+		},
+		{
+			"path": "pages/tarot/index",
+			"style": {
+				"navigationBarTitleText": "塔罗占卜",
+				"navigationBarBackgroundColor": "#1a0b2e",
+				"navigationBarTextStyle": "white"
+			}
+		}
+	],
+	"globalStyle": {
+		"navigationBarTextStyle": "white",
+		"navigationBarTitleText": "玄学运势",
+		"navigationBarBackgroundColor": "#1a0b2e",
+		"backgroundColor": "#1a0b2e"
+	},
+	"tabBar": {
+		"color": "#999999",
+		"selectedColor": "#ffd700",
+		"backgroundColor": "#1a0b2e",
+		"borderStyle": "black",
+		"list": [
+			{
+				"pagePath": "pages/index/index",
+				"text": "首页",
+				"iconPath": "static/images/home.png",
+				"selectedIconPath": "static/images/home-active.png"
+			},
+			{
+				"pagePath": "pages/user/index",
+				"text": "个人中心",
+				"iconPath": "static/images/user.png",
+				"selectedIconPath": "static/images/user-active.png"
+			}
+		]
+	},
+	"uniIdRouter": {}
+}

@@ -1,0 +1,1 @@
+{"version":3,"file":"index.js","sources":["pages/zhouyi/index.vue?type=page"],"sourcesContent":["import MiniProgramPage from '/Users/kanlina/Documents/HBuilderProjects/xuanxue/pages/zhouyi/index.vue'\nwx.createPage(MiniProgramPage)"],"names":[],"mappings":";;;;;;;;;;;AACA,GAAG,WAAW,eAAe;"}

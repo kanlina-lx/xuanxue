@@ -1,0 +1,58 @@
+{
+	"bsonType": "object",
+	"required": ["name", "gender", "birthDate", "birthTime", "birthPlace"],
+	"permission": {
+		"read": true,
+		"create": true,
+		"update": true,
+		"delete": true
+	},
+	"properties": {
+		"_id": {
+			"description": "存储文档 ID，系统自动生成",
+			"bsonType": "string"
+		},
+		"name": {
+			"bsonType": "string",
+			"description": "用户姓名",
+			"title": "姓名",
+			"trim": "both"
+		},
+		"gender": {
+			"bsonType": "string",
+			"description": "用户性别",
+			"title": "性别",
+			"enum": ["male", "female"]
+		},
+		"birthDate": {
+			"bsonType": "string",
+			"description": "出生日期",
+			"title": "出生日期"
+		},
+		"birthTime": {
+			"bsonType": "string",
+			"description": "出生时间",
+			"title": "出生时间"
+		},
+		"birthPlace": {
+			"bsonType": "string",
+			"description": "出生地点",
+			"title": "出生地点",
+			"trim": "both"
+		},
+		"create_date": {
+			"bsonType": "timestamp",
+			"description": "创建时间",
+			"defaultValue": {
+				"$env": "now"
+			}
+		},
+		"update_date": {
+			"bsonType": "timestamp",
+			"description": "更新时间",
+			"defaultValue": {
+				"$env": "now"
+			}
+		}
+	}
+}
