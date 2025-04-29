@@ -9,6 +9,8 @@ const _sfc_main = {
       currentDate: "",
       userBirthday: "",
       // 用户生日
+      userInfo: null,
+      // 添加用户信息对象
       fortuneData: {
         bazi: {
           career: 0,
@@ -40,19 +42,73 @@ const _sfc_main = {
       fengshuiDirections: []
     };
   },
+  onShow() {
+    this.checkUserInfoUpdate();
+  },
   mounted() {
     const now = /* @__PURE__ */ new Date();
     this.currentDate = `${now.getFullYear()}年${now.getMonth() + 1}月${now.getDate()}日`;
-    this.getUserBirthday();
+    this.getUserInfo();
   },
   methods: {
-    // 获取用户生日
-    getUserBirthday() {
-      this.userBirthday = "1990-01-01";
-      this.calculateFortune();
+    // 获取用户信息
+    async getUserInfo() {
+      try {
+        const userInfo = common_vendor.index.getStorageSync("userInfo");
+        if (userInfo && userInfo.birthDate) {
+          common_vendor.index.__f__("log", "at pages/daily/index.vue:321", "获取到的用户信息:", userInfo);
+          this.userInfo = userInfo;
+          this.userBirthday = userInfo.birthDate;
+          this.calculateFortune();
+        } else {
+          common_vendor.index.__f__("log", "at pages/daily/index.vue:326", "用户信息不完整:", userInfo);
+          common_vendor.index.switchTab({
+            url: "/pages/user/index"
+          });
+        }
+      } catch (e) {
+        common_vendor.index.__f__("error", "at pages/daily/index.vue:333", "获取用户信息失败:", e);
+        common_vendor.index.switchTab({
+          url: "/pages/user/index"
+        });
+      }
+    },
+    // 检查用户信息是否更新
+    async checkUserInfoUpdate() {
+      try {
+        const userInfo = common_vendor.index.getStorageSync("userInfo");
+        if (userInfo && userInfo.birthDate) {
+          if (JSON.stringify(userInfo) !== JSON.stringify(this.userInfo)) {
+            common_vendor.index.__f__("log", "at pages/daily/index.vue:347", "用户信息已更新:", userInfo);
+            this.userInfo = userInfo;
+            this.userBirthday = userInfo.birthDate;
+            this.showAnimation = true;
+            this.showFortune = false;
+            this.calculateFortune();
+          }
+        } else {
+          common_vendor.index.__f__("log", "at pages/daily/index.vue:357", "用户信息不完整:", userInfo);
+          common_vendor.index.switchTab({
+            url: "/pages/user/index"
+          });
+        }
+      } catch (e) {
+        common_vendor.index.__f__("error", "at pages/daily/index.vue:363", "检查用户信息更新失败:", e);
+        common_vendor.index.switchTab({
+          url: "/pages/user/index"
+        });
+      }
     },
     // 计算运势
     calculateFortune() {
+      if (!this.userBirthday) {
+        common_vendor.index.__f__("error", "at pages/daily/index.vue:373", "用户生日信息缺失，当前userBirthday:", this.userBirthday);
+        common_vendor.index.__f__("error", "at pages/daily/index.vue:374", "当前用户信息:", this.userInfo);
+        common_vendor.index.switchTab({
+          url: "/pages/user/index"
+        });
+        return;
+      }
       const seed = this.getSeed(this.userBirthday, this.currentDate);
       this.fortuneData.bazi = {
         career: this.calculateValue(seed, "career"),
