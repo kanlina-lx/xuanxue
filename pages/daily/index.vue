@@ -11,10 +11,12 @@
 			<view class="calculation-box" v-if="currentStep === 0">
 				<view class="calculation-title">八字排盘</view>
 				<view class="calculation-content">
-					<view class="bazi-pillar" v-for="(pillar, index) in baziPillars" :key="index"
-						:class="{ 'show': pillar.show }">
-						<view class="gan">{{pillar.gan}}</view>
-						<view class="zhi">{{pillar.zhi}}</view>
+					<view class="bazi-content">
+						<view class="bazi-pillar" v-for="(pillar, index) in baziPillars" :key="index"
+							:class="{ 'show': pillar.show }">
+							<view class="gan">{{pillar.gan}}</view>
+							<view class="zhi">{{pillar.zhi}}</view>
+						</view>
 					</view>
 				</view>
 				<view class="calculation-animation">
@@ -266,6 +268,7 @@ export default {
 			currentStep: 0,
 			currentDate: '',
 			userBirthday: '', // 用户生日
+			userInfo: null, // 添加用户信息对象
 			fortuneData: {
 				bazi: {
 					career: 0,
@@ -297,25 +300,84 @@ export default {
 			fengshuiDirections: []
 		}
 	},
+	onShow() {
+		// 每次页面显示时检查用户信息是否更新
+		this.checkUserInfoUpdate()
+	},
 	mounted() {
 		// 获取当前日期
 		const now = new Date()
 		this.currentDate = `${now.getFullYear()}年${now.getMonth() + 1}月${now.getDate()}日`
 		
-		// 获取用户生日
-		this.getUserBirthday()
+		// 获取用户信息
+		this.getUserInfo()
 	},
 	methods: {
-		// 获取用户生日
-		getUserBirthday() {
-			// 这里应该从用户信息中获取生日
-			// 暂时使用模拟数据
-			this.userBirthday = '1990-01-01'
-			this.calculateFortune()
+		// 获取用户信息
+		async getUserInfo() {
+			try {
+				const userInfo = uni.getStorageSync('userInfo')
+				if (userInfo && userInfo.birthDate) {
+					console.log('获取到的用户信息:', userInfo)
+					this.userInfo = userInfo
+					this.userBirthday = userInfo.birthDate
+					this.calculateFortune()
+				} else {
+					console.log('用户信息不完整:', userInfo)
+					// 使用 switchTab 跳转到个人中心
+					uni.switchTab({
+						url: '/pages/user/index'
+					})
+				}
+			} catch (e) {
+				console.error('获取用户信息失败:', e)
+				uni.switchTab({
+					url: '/pages/user/index'
+				})
+			}
+		},
+		
+		// 检查用户信息是否更新
+		async checkUserInfoUpdate() {
+			try {
+				const userInfo = uni.getStorageSync('userInfo')
+				if (userInfo && userInfo.birthDate) {
+					// 检查用户信息是否有变化
+					if (JSON.stringify(userInfo) !== JSON.stringify(this.userInfo)) {
+						console.log('用户信息已更新:', userInfo)
+						this.userInfo = userInfo
+						this.userBirthday = userInfo.birthDate
+						// 重置运势显示状态
+						this.showAnimation = true
+						this.showFortune = false
+						// 重新计算运势
+						this.calculateFortune()
+					}
+				} else {
+					console.log('用户信息不完整:', userInfo)
+					uni.switchTab({
+						url: '/pages/user/index'
+					})
+				}
+			} catch (e) {
+				console.error('检查用户信息更新失败:', e)
+				uni.switchTab({
+					url: '/pages/user/index'
+				})
+			}
 		},
 		
 		// 计算运势
 		calculateFortune() {
+			if (!this.userBirthday) {
+				console.error('用户生日信息缺失，当前userBirthday:', this.userBirthday)
+				console.error('当前用户信息:', this.userInfo)
+				uni.switchTab({
+					url: '/pages/user/index'
+				})
+				return
+			}
+			
 			// 使用生日和当前日期作为种子
 			const seed = this.getSeed(this.userBirthday, this.currentDate)
 			
@@ -729,10 +791,6 @@ export default {
 	padding: 20rpx;
 	position: relative;
 	overflow: hidden;
-	height: 100vh;
-	box-sizing: border-box;
-	display: flex;
-	flex-direction: column;
 }
 
 .star-field {
@@ -827,31 +885,45 @@ export default {
 }
 
 .bazi-content {
-	display: flex;
+	display: grid;
+	grid-template-columns: repeat(2, 1fr);
 	gap: 20rpx;
 	margin-bottom: 30rpx;
+	width: 100%;
 }
 
 .bazi-pillar {
-	display: flex;
-	flex-direction: column;
-	align-items: center;
+	display: grid;
+	grid-template-columns: repeat(2, 1fr);
 	gap: 10rpx;
+	width: 100%;
+	height: 100rpx;
 }
 
 .gan, .zhi {
-	width: 80rpx;
-	height: 80rpx;
+	width: 100%;
+	height: 100%;
 	font-size: 36rpx;
 	color: #ffd700;
 	text-shadow: 0 0 10rpx rgba(255,215,0,0.5);
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	background: rgba(255,215,0,0.1);
+	background: transparent;
 	border-radius: 10rpx;
 	position: relative;
 	overflow: hidden;
+	box-shadow: 0 0 10rpx rgba(255,215,0,0.3);
+}
+
+.gan {
+	grid-column: 1;
+	grid-row: 1;
+}
+
+.zhi {
+	grid-column: 2;
+	grid-row: 1;
 }
 
 .ziwei-chart {
@@ -887,6 +959,8 @@ export default {
 	font-size: 32rpx;
 	text-shadow: 0 0 10rpx rgba(255,215,0,0.5);
 	animation: nameGlow 2s infinite;
+	width: 100%;
+	text-align: center;
 }
 
 @keyframes nameGlow {
@@ -921,13 +995,15 @@ export default {
 
 .calculation-line {
 	color: #ffd700;
-	font-size: 32rpx;
-	margin-bottom: 15rpx;
+	font-size: 36rpx;
+	margin-bottom: 30rpx;
 	opacity: 0;
 	transform: translateX(-20rpx);
 	transition: all 0.3s ease;
 	text-shadow: 0 0 10rpx rgba(255,215,0,0.5);
 	position: relative;
+	width: 100%;
+	text-align: center;
 }
 
 .calculation-line.show {
@@ -974,14 +1050,13 @@ export default {
 .calculation-box {
 	width: 500rpx;
 	height: 500rpx;
-	background: rgba(0, 0, 0, 0.7);
+	background: transparent;
 	border-radius: 20rpx;
 	padding: 50rpx;
 	display: flex;
 	flex-direction: column;
 	align-items: center;
 	justify-content: center;
-	backdrop-filter: blur(10rpx);
 	position: relative;
 	overflow: visible;
 }
@@ -1035,7 +1110,7 @@ export default {
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	background: rgba(255,215,0,0.1);
+	background: transparent;
 	border-radius: 10rpx;
 	position: relative;
 	overflow: hidden;
@@ -1070,7 +1145,7 @@ export default {
 .grid-cell {
 	width: 100rpx;
 	height: 100rpx;
-	background: rgba(255,215,0,0.1);
+	background: transparent;
 	border-radius: 10rpx;
 	display: flex;
 	align-items: center;
@@ -1156,7 +1231,7 @@ export default {
 	position: absolute;
 	width: 120rpx;
 	height: 120rpx;
-	background: rgba(255,215,0,0.1);
+	background: transparent;
 	border-radius: 50%;
 	display: flex;
 	align-items: center;
@@ -1197,7 +1272,7 @@ export default {
 .star {
 	width: 120rpx;
 	height: 120rpx;
-	background: rgba(255,215,0,0.1);
+	background: transparent;
 	border-radius: 10rpx;
 	display: flex;
 	align-items: center;
@@ -1238,7 +1313,7 @@ export default {
 .palace {
 	width: 100rpx;
 	height: 100rpx;
-	background: rgba(255,215,0,0.1);
+	background: transparent;
 	border-radius: 10rpx;
 	display: flex;
 	align-items: center;
@@ -1280,7 +1355,7 @@ export default {
 .day {
 	width: 100rpx;
 	height: 100rpx;
-	background: rgba(255,215,0,0.1);
+	background: transparent;
 	border-radius: 10rpx;
 	display: flex;
 	align-items: center;
@@ -1324,7 +1399,7 @@ export default {
 	position: absolute;
 	width: 100rpx;
 	height: 100rpx;
-	background: rgba(255,215,0,0.1);
+	background: transparent;
 	border-radius: 10rpx;
 	display: flex;
 	align-items: center;
@@ -1378,23 +1453,17 @@ export default {
 }
 
 .fortune-display {
+	position: relative;
+	z-index: 2;
 	width: 100%;
 	padding: 40rpx;
 	box-sizing: border-box;
 	opacity: 0;
 	transform: translateY(20rpx);
 	animation: fortuneShow 0.5s forwards;
-	position: absolute;
-	top: 0;
-	left: 0;
-	z-index: 3;
 }
 
 @keyframes fortuneShow {
-	from {
-		opacity: 0;
-		transform: translateY(20rpx);
-	}
 	to {
 		opacity: 1;
 		transform: translateY(0);
@@ -1421,7 +1490,7 @@ export default {
 }
 
 .fortune-content {
-	background: rgba(0, 0, 0, 0.5);
+	background: transparent;
 	border-radius: 20rpx;
 	padding: 30rpx;
 }
@@ -1435,6 +1504,7 @@ export default {
 	color: #ffd700;
 	margin-bottom: 20rpx;
 	display: block;
+	text-shadow: 0 0 10rpx rgba(255,215,0,0.5);
 }
 
 .progress-group {
@@ -1453,14 +1523,16 @@ export default {
 	font-size: 32rpx;
 	color: #e6d5ff;
 	width: 120rpx;
+	text-shadow: 0 0 10rpx rgba(230,213,255,0.5);
 }
 
 .progress-bar {
 	flex: 1;
 	height: 20rpx;
-	background: rgba(255,215,0,0.1);
+	background: transparent;
 	border-radius: 10rpx;
 	overflow: hidden;
+	box-shadow: 0 0 10rpx rgba(255,215,0,0.3);
 }
 
 .progress-fill {
@@ -1468,6 +1540,7 @@ export default {
 	background: linear-gradient(90deg, #ffd700, #ffa500);
 	border-radius: 10rpx;
 	transition: width 0.5s ease;
+	box-shadow: 0 0 10rpx rgba(255,215,0,0.5);
 }
 
 .progress-value {
@@ -1475,6 +1548,7 @@ export default {
 	color: #ffd700;
 	width: 80rpx;
 	text-align: right;
+	text-shadow: 0 0 10rpx rgba(255,215,0,0.5);
 }
 
 .fortune-advice {
@@ -1488,6 +1562,7 @@ export default {
 	color: #ffd700;
 	margin-bottom: 20rpx;
 	display: block;
+	text-shadow: 0 0 10rpx rgba(255,215,0,0.5);
 }
 
 .advice-content {
@@ -1500,5 +1575,6 @@ export default {
 	font-size: 32rpx;
 	color: #e6d5ff;
 	line-height: 1.5;
+	text-shadow: 0 0 10rpx rgba(230,213,255,0.5);
 }
 </style> 
