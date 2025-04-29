@@ -1,6 +1,5 @@
 <template>
 	<view class="container">
-<<<<<<< HEAD
 		<!-- 星星背景 - 始终显示，但动画状态会改变 -->
 		<view class="star-background" :class="{'cosmic-bg': showCelestialShift}">
 			<!-- 星座连线 - 斗转星移模式下显示 -->
@@ -98,109 +97,16 @@
 					<view class="reminder-item" v-for="(item, index) in summary.reminders" :key="index">
 						<text class="icon">{{item.type === 'good' ? '✓' : '!'}}</text>
 						<text class="text">{{item.content}}</text>
-=======
-		<!-- 星空背景 -->
-		<view class="star-field">
-			<view class="stars" v-for="i in 200" :key="i" :style="getStarStyle(i)"></view>
-		</view>
-		
-		<!-- 占卜动画 -->
-		<view class="tarot-animation" v-if="showAnimation">
-			<view class="tarot-deck" :class="{ 'shuffling': isShuffling }">
-				<view class="tarot-card" v-for="(card, index) in deck" :key="index"
-					:style="getCardStyle(index)"
-					:class="{ 'selected': card.selected }">
-					<view class="card-back"></view>
-					<view class="card-front" v-if="card.selected">
-						<text class="card-name">{{card.name}}</text>
-						<text class="card-meaning">{{card.meaning}}</text>
->>>>>>> 51e7c751b5abfc022cb2aa9ea104576777a88671
 					</view>
 				</view>
 			</view>
 		</view>
 		
-<<<<<<< HEAD
 		<!-- 占卜过程中显示的提示 -->
 		<view class="divination-process" v-if="hideContent && !showResult">
 			<view class="process-text" :class="{'show': showProcessText}">
 				<text class="animate-text">命运之星正在为您占卜</text>
 				<text class="dots">...</text>
-=======
-		<!-- 占卜结果 -->
-		<view class="tarot-result" v-if="!showAnimation">
-			<!-- 问题输入 -->
-			<view class="question-card">
-				<view class="card-header">
-					<text class="title">塔罗占卜</text>
-					<text class="subtitle">请默念您的问题</text>
-				</view>
-				<view class="question-content">
-					<textarea v-model="question" placeholder="请输入您想问的问题..." class="question-input" />
-					<button class="submit-btn" @click="startDivination">开始占卜</button>
-				</view>
-			</view>
-			
-			<!-- 牌阵展示 -->
-			<view class="cards-card" v-if="showResult">
-				<view class="card-header">
-					<text class="title">牌阵分析</text>
-					<text class="subtitle">{{spread.name}}</text>
-				</view>
-				<view class="cards-content">
-					<view class="cards-grid">
-						<view class="card-item" v-for="(card, index) in spread.cards" :key="index">
-							<view class="card-image">
-								<text class="card-name">{{card.name}}</text>
-							</view>
-							<text class="card-position">{{card.position}}</text>
-						</view>
-					</view>
-				</view>
-			</view>
-			
-			<!-- 牌意分析 -->
-			<view class="interpretation-card" v-if="showResult">
-				<view class="card-header">
-					<text class="title">牌意分析</text>
-				</view>
-				<view class="interpretation-content">
-					<view class="interpretation-item" v-for="(card, index) in spread.cards" :key="index">
-						<text class="label">{{card.position}}</text>
-						<text class="value">{{card.meaning}}</text>
-					</view>
-				</view>
-			</view>
-			
-			<!-- 综合解读 -->
-			<view class="summary-card" v-if="showResult">
-				<view class="card-header">
-					<text class="title">综合解读</text>
-				</view>
-				<view class="summary-content">
-					<view class="summary-item">
-						<text class="label">整体运势</text>
-						<text class="value">{{summary.overall}}</text>
-					</view>
-					<view class="summary-item">
-						<text class="label">建议提醒</text>
-						<text class="value">{{summary.advice}}</text>
-					</view>
-				</view>
-			</view>
-			
-			<!-- 运势提醒 -->
-			<view class="reminder-card" v-if="showResult">
-				<view class="card-header">
-					<text class="title">运势提醒</text>
-				</view>
-				<view class="reminder-content">
-					<view class="reminder-item" v-for="(item, index) in summary.reminders" :key="index">
-						<text class="icon">{{item.type === 'good' ? '✓' : '!'}}</text>
-						<text class="text">{{item.content}}</text>
-					</view>
-				</view>
->>>>>>> 51e7c751b5abfc022cb2aa9ea104576777a88671
 			</view>
 		</view>
 	</view>
@@ -212,7 +118,6 @@ export default {
 		return {
 			question: '',
 			showResult: false,
-<<<<<<< HEAD
 			// 星星动画相关状态
 			isStarsMoving: false,    // 星星是否随机运动
 			showCelestialShift: false, // 星星斗转星移效果
@@ -232,12 +137,6 @@ export default {
 				speedY: (Math.random() - 0.5) * 0.2,
 				rotation: Math.random() * 360 // 添加旋转角度属性
 			})),
-=======
-			showAnimation: false,
-			isShuffling: false,
-			deck: [],
-			selectedCards: [],
->>>>>>> 51e7c751b5abfc022cb2aa9ea104576777a88671
 			spread: {
 				name: '三张牌阵',
 				cards: [
@@ -298,7 +197,6 @@ export default {
 	},
 	
 	methods: {
-<<<<<<< HEAD
 		// 星星随机运动
 		startStarsMovement() {
 			// 清除可能存在的旧定时器
@@ -346,9 +244,6 @@ export default {
 			}, 50); // 50毫秒更新一次位置
 		},
 		
-=======
-		// 开始占卜
->>>>>>> 51e7c751b5abfc022cb2aa9ea104576777a88671
 		startDivination() {
 			if (!this.question) {
 				uni.showToast({
@@ -357,8 +252,7 @@ export default {
 				})
 				return
 			}
-<<<<<<< HEAD
-			
+
 			// 重置所有状态，确保每次占卜都是新的开始
 			this.showResult = false;
 			this.formCardShape = false;
@@ -430,80 +324,6 @@ export default {
 					this.flickerSequence();
 				}
 			}, 300 + Math.random() * 300);
-=======
-			this.showAnimation = true
-			this.isShuffling = true
-			this.initializeDeck()
-			
-			// 洗牌动画
-			setTimeout(() => {
-				this.isShuffling = false
-				// 抽牌动画
-				this.drawCards()
-			}, 2000)
-		},
-		
-		// 初始化牌组
-		initializeDeck() {
-			this.deck = this.tarotCards.map(card => ({
-				...card,
-				selected: false,
-				position: Math.random() * 360
-			}))
-		},
-		
-		// 获取卡片样式
-		getCardStyle(index) {
-			const card = this.deck[index]
-			return {
-				transform: `rotate(${card.position}deg)`,
-				zIndex: card.selected ? 100 : index
-			}
-		},
-		
-		// 抽牌
-		drawCards() {
-			// 随机选择3张牌
-			const selectedIndices = []
-			while (selectedIndices.length < 3) {
-				const index = Math.floor(Math.random() * this.deck.length)
-				if (!selectedIndices.includes(index)) {
-					selectedIndices.push(index)
-				}
-			}
-			
-			// 依次展示选中的牌
-			selectedIndices.forEach((index, i) => {
-				setTimeout(() => {
-					this.$set(this.deck[index], 'selected', true)
-					this.selectedCards.push(this.deck[index])
-					
-					// 所有牌都展示完后，显示结果
-					if (i === selectedIndices.length - 1) {
-						setTimeout(() => {
-							this.showAnimation = false
-							this.showResult = true
-						}, 1000)
-					}
-				}, i * 500)
-			})
-		},
-		
-		// 获取星星样式
-		getStarStyle(index) {
-			const x = Math.random() * 100
-			const y = Math.random() * 100
-			const size = Math.random() * 2 + 1
-			const delay = Math.random() * 2
-			
-			return {
-				left: `${x}%`,
-				top: `${y}%`,
-				width: `${size}rpx`,
-				height: `${size}rpx`,
-				animationDelay: `${delay}s`
-			}
->>>>>>> 51e7c751b5abfc022cb2aa9ea104576777a88671
 		}
 	}
 }
