@@ -1,72 +1,69 @@
 <template>
 	<view class="container">
-		<!-- 生辰输入 -->
-		<view class="input-card">
-			<view class="card-header">
-				<text class="title">生辰四柱</text>
-				<text class="subtitle">请输入您的出生信息</text>
-			</view>
-			<view class="input-content">
-				<view class="input-item">
-					<text class="label">出生日期</text>
-					<picker mode="date" :value="birthDate" @change="onDateChange">
-						<view class="picker">{{birthDate || '请选择日期'}}</view>
-					</picker>
-				</view>
-				<view class="input-item">
-					<text class="label">出生时间</text>
-					<picker mode="time" :value="birthTime" @change="onTimeChange">
-						<view class="picker">{{birthTime || '请选择时间'}}</view>
-					</picker>
-				</view>
-				<view class="input-item">
-					<text class="label">出生地点</text>
-					<input type="text" v-model="birthPlace" placeholder="请输入出生地点" />
-				</view>
-			</view>
-			<button class="submit-btn" @click="calculate">开始分析</button>
-		</view>
-		
-		<!-- 四柱展示 -->
-		<view class="pillar-card" v-if="showResult">
-			<view class="card-header">
-				<text class="title">四柱分析</text>
-				<text class="subtitle">您的命理信息</text>
-			</view>
-			<view class="pillar-content">
-				<view class="pillar-item" v-for="(item, index) in pillars" :key="index">
-					<text class="name">{{item.name}}</text>
-					<text class="value">{{item.value}}</text>
-					<text class="element">{{item.element}}</text>
-				</view>
+		<!-- 用户信息检查 -->
+		<view class="user-info-check" v-if="!userInfoComplete">
+			<view class="check-content">
+				<text class="check-title">信息不完整</text>
+				<text class="check-desc">请先完善您的个人信息</text>
+				<button class="check-btn" @click="goToUserCenter">去完善</button>
 			</view>
 		</view>
-		
-		<!-- 命理分析 -->
-		<view class="analysis-card" v-if="showResult">
-			<view class="card-header">
-				<text class="title">命理分析</text>
-			</view>
-			<view class="analysis-content">
-				<view class="analysis-item">
-					<text class="label">五行属性</text>
-					<view class="elements">
-						<view class="element-item" v-for="(item, index) in elements" :key="index">
-							<text class="name">{{item.name}}</text>
-							<view class="progress">
-								<view class="progress-bar" :style="{width: item.value + '%'}"></view>
-							</view>
-							<text class="value">{{item.value}}%</text>
+
+		<!-- 生辰四柱分析 -->
+		<view class="analysis-container" v-else>
+			<!-- 四柱展示 -->
+			<view class="pillar-section" :class="{'fade-in': showPillars}">
+				<view class="pillar-title">
+					<text class="title-text">生辰四柱</text>
+					<text class="title-desc">您的命理基础</text>
+				</view>
+				<view class="pillar-grid">
+					<view class="pillar-item" v-for="(pillar, index) in pillars" :key="index" 
+						:class="{'slide-in': showPillars}" :style="{animationDelay: index * 0.2 + 's'}">
+						<view class="pillar-header">
+							<text class="pillar-name">{{pillar.name}}</text>
+							<text class="pillar-time">{{pillar.time}}</text>
+						</view>
+						<view class="pillar-content">
+							<text class="pillar-value">{{pillar.value}}</text>
+							<text class="pillar-element">{{pillar.element}}</text>
 						</view>
 					</view>
 				</view>
-				<view class="analysis-item">
-					<text class="label">命理特点</text>
-					<text class="content">{{analysis.characteristics}}</text>
+			</view>
+
+			<!-- 五行分析 -->
+			<view class="element-section" :class="{'fade-in': showElements}">
+				<view class="element-title">
+					<text class="title-text">五行分析</text>
+					<text class="title-desc">您的五行属性</text>
 				</view>
-				<view class="analysis-item">
-					<text class="label">运势建议</text>
-					<text class="content">{{analysis.advice}}</text>
+				<view class="element-content">
+					<view class="element-item" v-for="(item, index) in elements" :key="index"
+						:class="{'slide-in': showElements}" :style="{animationDelay: index * 0.2 + 's'}">
+						<view class="element-info">
+							<text class="element-name">{{item.name}}</text>
+							<text class="element-value">{{item.value}}%</text>
+						</view>
+						<view class="element-progress">
+							<view class="progress-bar" :style="{width: item.value + '%', backgroundColor: item.color}"></view>
+						</view>
+					</view>
+				</view>
+			</view>
+
+			<!-- 命理分析 -->
+			<view class="analysis-section" :class="{'fade-in': showAnalysis}">
+				<view class="analysis-title">
+					<text class="title-text">命理分析</text>
+					<text class="title-desc">您的命理特点</text>
+				</view>
+				<view class="analysis-content">
+					<view class="analysis-item" v-for="(item, key) in analysis" :key="key"
+						:class="{'slide-in': showAnalysis}" :style="{animationDelay: key * 0.2 + 's'}">
+						<text class="item-title">{{getAnalysisTitle(key)}}</text>
+						<text class="item-content">{{item}}</text>
+					</view>
 				</view>
 			</view>
 		</view>
@@ -74,48 +71,114 @@
 </template>
 
 <script>
+import { calculatePillars } from '@/utils/pillarCalculator.js'
+
 export default {
 	data() {
 		return {
-			birthDate: '',
-			birthTime: '',
-			birthPlace: '',
-			showResult: false,
-			pillars: [
-				{name: '年柱', value: '甲子', element: '木'},
-				{name: '月柱', value: '乙丑', element: '木'},
-				{name: '日柱', value: '丙寅', element: '火'},
-				{name: '时柱', value: '丁卯', element: '火'}
-			],
-			elements: [
-				{name: '木', value: 30},
-				{name: '火', value: 40},
-				{name: '土', value: 10},
-				{name: '金', value: 15},
-				{name: '水', value: 5}
-			],
+			userInfoComplete: false,
+			userInfo: null,
+			pillars: [],
+			elements: [],
 			analysis: {
-				characteristics: '命主五行属火，性格热情开朗，富有创造力。木火相生，主聪明才智，但需注意控制情绪。',
-				advice: '建议多接触水属性的事物，以平衡五行。事业发展宜选择与火、木相关的行业。'
-			}
+				character: '',
+				career: '',
+				love: '',
+				health: ''
+			},
+			showPillars: false,
+			showElements: false,
+			showAnalysis: false
 		}
 	},
+	onShow() {
+		this.checkUserInfo()
+	},
 	methods: {
-		onDateChange(e) {
-			this.birthDate = e.detail.value
-		},
-		onTimeChange(e) {
-			this.birthTime = e.detail.value
-		},
-		calculate() {
-			if (!this.birthDate || !this.birthTime || !this.birthPlace) {
-				uni.showToast({
-					title: '请填写完整信息',
-					icon: 'none'
-				})
-				return
+		checkUserInfo() {
+			const userInfo = uni.getStorageSync('userInfo')
+			if (userInfo && userInfo.birthDate && userInfo.birthTime && userInfo.birthPlace) {
+				this.userInfoComplete = true
+				this.userInfo = userInfo
+				this.calculatePillars()
+			} else {
+				this.userInfoComplete = false
 			}
-			this.showResult = true
+		},
+		goToUserCenter() {
+			uni.switchTab({
+				url: '/pages/user/index'
+			})
+		},
+		calculatePillars() {
+			const { pillars, elements } = calculatePillars(this.userInfo.birthDate, this.userInfo.birthTime)
+			this.pillars = pillars
+			this.elements = elements
+			
+			// 设置动画延迟
+			setTimeout(() => {
+				this.showPillars = true
+				setTimeout(() => {
+					this.showElements = true
+					setTimeout(() => {
+						this.showAnalysis = true
+					}, 500)
+				}, 500)
+			}, 100)
+			
+			// 根据五行属性生成分析结果
+			this.generateAnalysis(elements)
+		},
+		getAnalysisTitle(key) {
+			const titleMap = {
+				character: '性格特点',
+				career: '事业运势',
+				love: '感情运势',
+				health: '健康建议'
+			}
+			return titleMap[key]
+		},
+		generateAnalysis(elements) {
+			// 找出主要五行属性
+			const mainElement = elements.reduce((prev, current) => {
+				return (prev.value > current.value) ? prev : current
+			})
+			
+			// 根据主要五行生成分析结果
+			const analysisMap = {
+				'木': {
+					character: '命主五行属木，性格温和善良，富有同情心。木主仁，为人正直，但有时过于理想化。',
+					career: '事业发展宜选择与木相关的行业，如教育、医疗、环保等领域。',
+					love: '感情运势较为稳定，但需注意避免过于理想化，学会包容和妥协。',
+					health: '需注意肝胆系统的保养，建议多进行户外活动，保持心情愉悦。'
+				},
+				'火': {
+					character: '命主五行属火，性格热情开朗，富有创造力。火主礼，为人热情，但需注意控制情绪。',
+					career: '事业发展宜选择与火相关的行业，如文化、艺术、传媒等领域。',
+					love: '感情运势较为顺利，但需注意与伴侣的沟通，避免因性格急躁而产生矛盾。',
+					health: '需注意心脏和血液循环系统的保养，建议多进行有氧运动，保持心情愉悦。'
+				},
+				'土': {
+					character: '命主五行属土，性格稳重踏实，富有责任感。土主信，为人诚信，但有时过于保守。',
+					career: '事业发展宜选择与土相关的行业，如建筑、房地产、农业等领域。',
+					love: '感情运势较为稳定，但需注意避免过于保守，学会表达情感。',
+					health: '需注意脾胃系统的保养，建议保持规律作息，注意饮食健康。'
+				},
+				'金': {
+					character: '命主五行属金，性格果断坚毅，富有正义感。金主义，为人正直，但有时过于固执。',
+					career: '事业发展宜选择与金相关的行业，如金融、法律、科技等领域。',
+					love: '感情运势较为顺利，但需注意避免过于固执，学会灵活变通。',
+					health: '需注意呼吸系统的保养，建议多进行深呼吸练习，保持室内空气流通。'
+				},
+				'水': {
+					character: '命主五行属水，性格聪明机智，富有智慧。水主智，为人聪慧，但有时过于敏感。',
+					career: '事业发展宜选择与水相关的行业，如贸易、物流、旅游等领域。',
+					love: '感情运势较为顺利，但需注意避免过于敏感，学会理性思考。',
+					health: '需注意肾脏和泌尿系统的保养，建议多喝水，保持规律作息。'
+				}
+			}
+			
+			this.analysis = analysisMap[mainElement.name]
 		}
 	}
 }
@@ -129,22 +192,89 @@ export default {
 	padding: 20rpx;
 }
 
-.input-card,
-.pillar-card,
-.analysis-card {
-	background-color: rgba(255,255,255,0.05);
+.user-info-check {
+	height: 100vh;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.check-content {
+	text-align: center;
+}
+
+.check-title {
+	font-size: 36rpx;
+	color: #ffd700;
+	margin-bottom: 20rpx;
+	display: block;
+}
+
+.check-desc {
+	font-size: 28rpx;
+	color: #e6d5ff;
+	margin-bottom: 40rpx;
+	display: block;
+}
+
+.check-btn {
+	width: 200rpx;
+	height: 80rpx;
+	background: linear-gradient(90deg, #ffd700, #ffa500);
+	border-radius: 40rpx;
+	color: #1a0b2e;
+	font-size: 28rpx;
+	font-weight: bold;
+}
+
+.analysis-container {
+	display: flex;
+	flex-direction: column;
+	gap: 40rpx;
+}
+
+.pillar-section,
+.element-section,
+.analysis-section {
+	background: rgba(255,255,255,0.05);
 	border-radius: 20rpx;
 	padding: 30rpx;
-	margin-bottom: 30rpx;
 	backdrop-filter: blur(10rpx);
 	border: 1rpx solid rgba(255,215,0,0.1);
+	opacity: 0;
+	transform: translateY(20rpx);
+	transition: all 0.5s ease;
 }
 
-.card-header {
+.fade-in {
+	opacity: 1;
+	transform: translateY(0);
+}
+
+.slide-in {
+	animation: slideIn 0.5s ease forwards;
+	opacity: 0;
+	transform: translateX(-20rpx);
+}
+
+@keyframes slideIn {
+	from {
+		opacity: 0;
+		transform: translateX(-20rpx);
+	}
+	to {
+		opacity: 1;
+		transform: translateX(0);
+	}
+}
+
+.pillar-title,
+.element-title,
+.analysis-title {
 	margin-bottom: 30rpx;
 }
 
-.title {
+.title-text {
 	font-size: 32rpx;
 	font-weight: bold;
 	color: #ffd700;
@@ -152,52 +282,13 @@ export default {
 	margin-bottom: 10rpx;
 }
 
-.subtitle {
+.title-desc {
 	font-size: 24rpx;
 	color: #e6d5ff;
 	opacity: 0.8;
 }
 
-.input-content {
-	display: flex;
-	flex-direction: column;
-	gap: 20rpx;
-}
-
-.input-item {
-	display: flex;
-	flex-direction: column;
-	gap: 10rpx;
-}
-
-.label {
-	font-size: 28rpx;
-	color: #e6d5ff;
-}
-
-.picker,
-input {
-	height: 80rpx;
-	background: rgba(255,255,255,0.03);
-	border-radius: 10rpx;
-	padding: 0 20rpx;
-	color: #fff;
-	font-size: 28rpx;
-	border: 1rpx solid rgba(255,215,0,0.1);
-}
-
-.submit-btn {
-	width: 100%;
-	height: 80rpx;
-	background: linear-gradient(90deg, #ffd700, #ffa500);
-	border-radius: 10rpx;
-	color: #1a0b2e;
-	font-size: 28rpx;
-	font-weight: bold;
-	margin-top: 30rpx;
-}
-
-.pillar-content {
+.pillar-grid {
 	display: grid;
 	grid-template-columns: repeat(2, 1fr);
 	gap: 20rpx;
@@ -207,27 +298,81 @@ input {
 	background: rgba(255,255,255,0.03);
 	border-radius: 15rpx;
 	padding: 20rpx;
+	border: 1rpx solid rgba(255,215,0,0.1);
+}
+
+.pillar-header {
+	display: flex;
+	justify-content: space-between;
+	margin-bottom: 10rpx;
+}
+
+.pillar-name {
+	font-size: 28rpx;
+	color: #ffd700;
+}
+
+.pillar-time {
+	font-size: 24rpx;
+	color: #e6d5ff;
+}
+
+.pillar-content {
 	display: flex;
 	flex-direction: column;
 	align-items: center;
 	gap: 10rpx;
-	border: 1rpx solid rgba(255,215,0,0.1);
 }
 
-.pillar-item .name {
+.pillar-value {
+	font-size: 36rpx;
+	font-weight: bold;
+	color: #fff;
+}
+
+.pillar-element {
 	font-size: 24rpx;
 	color: #e6d5ff;
 }
 
-.pillar-item .value {
-	font-size: 36rpx;
-	font-weight: bold;
+.element-content {
+	display: flex;
+	flex-direction: column;
+	gap: 20rpx;
+}
+
+.element-item {
+	display: flex;
+	flex-direction: column;
+	gap: 10rpx;
+}
+
+.element-info {
+	display: flex;
+	justify-content: space-between;
+}
+
+.element-name {
+	font-size: 28rpx;
+	color: #e6d5ff;
+}
+
+.element-value {
+	font-size: 28rpx;
 	color: #ffd700;
 }
 
-.pillar-item .element {
-	font-size: 24rpx;
-	color: #e6d5ff;
+.element-progress {
+	height: 8rpx;
+	background: rgba(255,255,255,0.1);
+	border-radius: 4rpx;
+	overflow: hidden;
+}
+
+.progress-bar {
+	height: 100%;
+	border-radius: 4rpx;
+	transition: width 0.3s ease;
 }
 
 .analysis-content {
@@ -242,49 +387,14 @@ input {
 	gap: 10rpx;
 }
 
-.elements {
-	display: flex;
-	flex-direction: column;
-	gap: 15rpx;
-}
-
-.element-item {
-	display: flex;
-	align-items: center;
-	gap: 20rpx;
-}
-
-.element-item .name {
-	width: 40rpx;
-	font-size: 24rpx;
-	color: #e6d5ff;
-}
-
-.element-item .progress {
-	flex: 1;
-	height: 10rpx;
-	background: rgba(255,255,255,0.1);
-	border-radius: 5rpx;
-	overflow: hidden;
-}
-
-.element-item .progress-bar {
-	height: 100%;
-	background: linear-gradient(90deg, #ffd700, #ffa500);
-	border-radius: 5rpx;
-	transition: width 0.3s ease;
-}
-
-.element-item .value {
-	width: 60rpx;
-	font-size: 24rpx;
-	color: #e6d5ff;
-	text-align: right;
-}
-
-.content {
+.item-title {
 	font-size: 28rpx;
-	line-height: 1.6;
+	color: #ffd700;
+}
+
+.item-content {
+	font-size: 26rpx;
 	color: #e6d5ff;
+	line-height: 1.6;
 }
 </style> 
