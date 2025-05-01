@@ -6057,7 +6057,7 @@ function populateParameters(fromRes, toRes) {
   const hostLanguage = (language || "").replace(/_/g, "-");
   const parameters = {
     appId: "__UNI__F0A01CC",
-    appName: "xuanxue",
+    appName: "指南针命理",
     appVersion: "1.0.0",
     appVersionCode: "100",
     appLanguage: getAppLanguage(hostLanguage),
@@ -6206,7 +6206,7 @@ const getAppBaseInfo = {
       hostSDKVersion: SDKVersion,
       hostTheme: theme,
       appId: "__UNI__F0A01CC",
-      appName: "xuanxue",
+      appName: "指南针命理",
       appVersion: "1.0.0",
       appVersionCode: "100",
       appLanguage: getAppLanguage(hostLanguage),
@@ -7866,7 +7866,7 @@ const pages = [
   {
     path: "pages/index/index",
     style: {
-      navigationBarTitleText: "玄学运势"
+      navigationBarTitleText: "指南针命理"
     }
   },
   {
@@ -7940,7 +7940,7 @@ const pages = [
 ];
 const globalStyle = {
   navigationBarTextStyle: "white",
-  navigationBarTitleText: "玄学运势",
+  navigationBarTitleText: "指南针命理",
   navigationBarBackgroundColor: "#1a0b2e",
   backgroundColor: "#1a0b2e"
 };

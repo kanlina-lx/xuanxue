@@ -32,34 +32,8 @@ const _sfc_main = {
       processText: "请静心默念所问之事...",
       currentYao: 0,
       allCoinResults: [],
-      stars: Array(100).fill().map(() => {
-        const windowWidth = common_vendor.index.getSystemInfoSync().windowWidth;
-        const windowHeight = common_vendor.index.getSystemInfoSync().windowHeight;
-        return {
-          x: Math.random() * windowWidth,
-          y: Math.random() * windowHeight,
-          startX: Math.random() * windowWidth,
-          startY: Math.random() * windowHeight,
-          targetX: windowWidth / 2,
-          targetY: windowHeight / 2,
-          size: Math.random() * 1 + 0.5,
-          opacity: Math.random() * 0.5 + 0.5,
-          delay: Math.random() * 2,
-          progress: 0,
-          speed: Math.random() * 0.02 + 0.01
-        };
-      }),
-      meteors: Array(5).fill().map(() => {
-        const windowWidth = common_vendor.index.getSystemInfoSync().windowWidth;
-        const windowHeight = common_vendor.index.getSystemInfoSync().windowHeight;
-        return {
-          x: Math.random() * windowWidth,
-          y: Math.random() * windowHeight,
-          size: Math.random() * 1.5 + 0.5,
-          opacity: Math.random() * 0.8 + 0.2,
-          delay: Math.random() * 3
-        };
-      }),
+      stars: common_vendor.index.getStorageSync("backgroundStars") || [],
+      meteors: common_vendor.index.getStorageSync("backgroundMeteors") || [],
       showResult: false,
       showHexagram: false,
       showJudgment: false,
@@ -81,6 +55,34 @@ const _sfc_main = {
     };
   },
   methods: {
+    // 修改初始化星空背景的方法
+    initBackground() {
+      if (common_vendor.index.getStorageSync("backgroundStars") && common_vendor.index.getStorageSync("backgroundMeteors")) {
+        this.stars = common_vendor.index.getStorageSync("backgroundStars");
+        this.meteors = common_vendor.index.getStorageSync("backgroundMeteors");
+        return;
+      }
+      const windowWidth = common_vendor.index.getSystemInfoSync().windowWidth;
+      const windowHeight = common_vendor.index.getSystemInfoSync().windowHeight;
+      const stars = Array(100).fill().map(() => ({
+        x: Math.random() * windowWidth,
+        y: Math.random() * windowHeight,
+        size: Math.random() * 1 + 0.5,
+        opacity: Math.random() * 0.5 + 0.5,
+        delay: Math.random() * 2
+      }));
+      const meteors = Array(5).fill().map(() => ({
+        x: Math.random() * windowWidth,
+        y: Math.random() * windowHeight,
+        size: Math.random() * 1.5 + 0.5,
+        opacity: Math.random() * 0.8 + 0.2,
+        delay: Math.random() * 3
+      }));
+      common_vendor.index.setStorageSync("backgroundStars", stars);
+      common_vendor.index.setStorageSync("backgroundMeteors", meteors);
+      this.stars = stars;
+      this.meteors = meteors;
+    },
     // 星星移动到目标位置
     async moveStarsToTarget() {
       return new Promise((resolve) => {
@@ -204,7 +206,7 @@ const _sfc_main = {
       await new Promise((resolve) => setTimeout(resolve, 2e3));
       return coinResults;
     },
-    // 投掷一次硬币
+    // 修改 throwCoins 方法
     async throwCoins() {
       if (this.showCoins) {
         this.showCoins = false;
@@ -284,7 +286,7 @@ const _sfc_main = {
           changingLines: lines.map((l, index) => l.isChanging ? 6 - index : null).filter((i) => i !== null)
         };
       } catch (error) {
-        common_vendor.index.__f__("error", "at pages/iching/index.vue:500", "获取卦象数据失败:", error);
+        common_vendor.index.__f__("error", "at pages/iching/index.vue:512", "获取卦象数据失败:", error);
         return {
           original: utils_hexagramData.hexagrams[0],
           changed: null,
@@ -361,6 +363,9 @@ const _sfc_main = {
     getAdvice(gua) {
       return this.adviceData[gua.name] || [];
     }
+  },
+  onLoad() {
+    this.initBackground();
   },
   mounted() {
     this.loadHistory();

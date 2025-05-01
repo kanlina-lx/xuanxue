@@ -2,7 +2,16 @@
 	<view class="container">
 		<!-- 星空背景 -->
 		<view class="star-field">
-			<view class="stars" v-for="i in 200" :key="'star-' + i" :style="getStarStyle(i)"></view>
+			<view class="stars" v-for="(star, index) in stars" :key="'star-' + index" 
+				:style="{
+					left: star.x + 'px',
+					top: star.y + 'px',
+					width: star.size + 'px',
+					height: star.size + 'px',
+					opacity: star.opacity,
+					animationDelay: star.delay + 's'
+				}">
+			</view>
 		</view>
 
 		<!-- 用户信息检查 -->
@@ -80,6 +89,15 @@
 						</view>
 						<text class="report-conclusion" v-if="index === 3">祝您今日好运！</text>
 					</view>
+					<!-- 报告底部按钮 -->
+					<view class="report-buttons">
+						<view class="report-btn recalculate" @click="recalculate">
+							<text>重新计算</text>
+						</view>
+						<view class="report-btn back-home" @click="goToHome">
+							<text>返回首页</text>
+						</view>
+					</view>
 				</view>
 			</view>
 		</view>
@@ -126,11 +144,17 @@ export default {
 				{ show: false },
 				{ show: false }
 			],
-			lastUpdateTime: null
+			lastUpdateTime: null,
+			stars: [],
+			meteors: [],
+			showRecalculateBtn: false,
 		}
 	},
 	onShow() {
 		this.checkUserInfo()
+	},
+	onLoad() {
+		this.initBackground()
 	},
 	watch: {
 		'userInfo.birthDate': {
@@ -144,6 +168,30 @@ export default {
 		}
 	},
 	methods: {
+		initBackground() {
+			// 从缓存中获取星星数据
+			const cachedStars = uni.getStorageSync('backgroundStars');
+			if (cachedStars && cachedStars.length > 0) {
+				this.stars = cachedStars;
+				return;
+			}
+			
+			// 如果没有缓存，生成新的星星数据
+			const windowWidth = uni.getSystemInfoSync().windowWidth;
+			const windowHeight = uni.getSystemInfoSync().windowHeight;
+			
+			const stars = Array(200).fill().map(() => ({
+				x: Math.random() * windowWidth,
+				y: Math.random() * windowHeight,
+				size: Math.random() * 2 + 1,
+				opacity: Math.random() * 0.5 + 0.5,
+				delay: Math.random() * 2
+			}));
+			
+			// 保存到缓存
+			uni.setStorageSync('backgroundStars', stars);
+			this.stars = stars;
+		},
 		resetAnalysis() {
 			this.currentStep = 0
 			this.pillars = []
@@ -158,14 +206,19 @@ export default {
 			this.showReport = false
 			this.reportItems = this.reportItems.map(() => ({ show: false }))
 			this.lastUpdateTime = new Date().getTime()
+			// 清除运势数据缓存
+			uni.removeStorageSync('fortuneData')
 		},
 		checkUserInfo() {
 			const userInfo = uni.getStorageSync('userInfo')
 			if (userInfo && userInfo.birthDate && userInfo.birthTime && userInfo.birthPlace) {
 				this.userInfoComplete = true
-				this.userInfo = userInfo
-				this.resetAnalysis()
-				this.startAnalysis()
+				// 检查用户信息是否有变化
+				if (JSON.stringify(userInfo) !== JSON.stringify(this.userInfo)) {
+					this.userInfo = userInfo
+					this.resetAnalysis()
+					this.startAnalysis()
+				}
 			} else {
 				this.userInfoComplete = false
 			}
@@ -176,6 +229,38 @@ export default {
 			})
 		},
 		startAnalysis() {
+			if (!this.userInfo || !this.userInfo.birthDate) {
+				console.error('用户信息不完整')
+				uni.switchTab({
+					url: '/pages/user/index',
+					fail: (err) => {
+						console.error('跳转失败:', err)
+						uni.showToast({
+							title: '请先完善个人信息',
+							icon: 'none',
+							duration: 2000
+						})
+					}
+				})
+				return
+			}
+			
+			// 重置分析状态
+			this.currentStep = 0
+			this.pillars = []
+			this.elements = {}
+			this.fortune = {
+				overall: '',
+				career: '',
+				wealth: '',
+				love: '',
+				health: ''
+			}
+			this.showReport = false
+			this.reportItems = this.reportItems.map(() => ({ show: false }))
+			this.lastUpdateTime = new Date().getTime()
+			
+			// 开始完整的分析流程
 			this.analyzePillars()
 		},
 		analyzePillars() {
@@ -192,7 +277,16 @@ export default {
 			// 计算今日八字
 			setTimeout(() => {
 				const today = new Date()
-				const { pillars } = calculateFortune(today, this.userInfo.birthDate)
+				const birthDate = new Date(this.userInfo.birthDate)
+				const birthTime = this.userInfo.birthTime.split(':')
+				const birthHour = parseInt(birthTime[0])
+				const birthMinute = parseInt(birthTime[1])
+				
+				// 使用用户生日和出生时间生成种子
+				const seed = this.generateSeed(birthDate, birthHour, birthMinute)
+				
+				// 根据种子生成八字
+				const pillars = this.generatePillars(seed, today)
 				this.pillars = pillars.map(pillar => ({ ...pillar, show: false }))
 				
 				// 显示八字结果
@@ -221,8 +315,13 @@ export default {
 			
 			// 计算五行分布
 			setTimeout(() => {
-				const today = new Date()
-				const { elements, userChart } = calculateFortune(today, this.userInfo.birthDate)
+				const birthDate = new Date(this.userInfo.birthDate)
+				const birthTime = this.userInfo.birthTime.split(':')
+				const birthHour = parseInt(birthTime[0])
+				const birthMinute = parseInt(birthTime[1])
+				
+				// 使用用户信息生成五行数据
+				const elements = this.calculateElements(birthDate, birthHour, birthMinute)
 				this.elements = elements
 				
 				setTimeout(() => {
@@ -244,13 +343,21 @@ export default {
 			
 			// 计算运势
 			setTimeout(() => {
-				const today = new Date()
-				const { fortune } = calculateFortune(today, this.userInfo.birthDate)
+				const birthDate = new Date(this.userInfo.birthDate)
+				const birthTime = this.userInfo.birthTime.split(':')
+				const birthHour = parseInt(birthTime[0])
+				const birthMinute = parseInt(birthTime[1])
+				const birthPlace = this.userInfo.birthPlace
+				
+				// 使用用户信息生成运势数据
+				const fortune = this.calculateFortune(birthDate, birthHour, birthMinute, birthPlace)
 				this.fortune = fortune
 				
 				// 显示最终报告
 				setTimeout(() => {
 					this.showReport = true
+					
+					// 逐项显示报告内容
 					this.reportItems.forEach((item, index) => {
 						setTimeout(() => {
 							this.$set(this.reportItems, index, { ...item, show: true })
@@ -258,6 +365,140 @@ export default {
 					})
 				}, 2000)
 			}, 1500)
+		},
+		// 生成种子值
+		generateSeed(birthDate, birthHour, birthMinute) {
+			const year = birthDate.getFullYear()
+			const month = birthDate.getMonth() + 1
+			const day = birthDate.getDate()
+			return year * 1000000 + month * 10000 + day * 100 + birthHour * 10 + birthMinute
+		},
+		// 生成八字
+		generatePillars(seed, today) {
+			const heavenlyStems = ['甲', '乙', '丙', '丁', '戊', '己', '庚', '辛', '壬', '癸']
+			const earthlyBranches = ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥']
+			const elements = ['木', '火', '土', '金', '水']
+			
+			// 使用种子生成随机但固定的八字
+			const yearIndex = (seed + today.getFullYear()) % heavenlyStems.length
+			const monthIndex = (seed + today.getMonth() + 1) % heavenlyStems.length
+			const dayIndex = (seed + today.getDate()) % heavenlyStems.length
+			const hourIndex = (seed + today.getHours()) % heavenlyStems.length
+			
+			return [
+				{
+					name: '年柱',
+					value: heavenlyStems[yearIndex] + earthlyBranches[yearIndex % earthlyBranches.length],
+					element: elements[yearIndex % elements.length]
+				},
+				{
+					name: '月柱',
+					value: heavenlyStems[monthIndex] + earthlyBranches[monthIndex % earthlyBranches.length],
+					element: elements[monthIndex % elements.length]
+				},
+				{
+					name: '日柱',
+					value: heavenlyStems[dayIndex] + earthlyBranches[dayIndex % earthlyBranches.length],
+					element: elements[dayIndex % elements.length]
+				},
+				{
+					name: '时柱',
+					value: heavenlyStems[hourIndex] + earthlyBranches[hourIndex % earthlyBranches.length],
+					element: elements[hourIndex % elements.length]
+				}
+			]
+		},
+		// 计算五行
+		calculateElements(birthDate, birthHour, birthMinute) {
+			const seed = this.generateSeed(birthDate, birthHour, birthMinute)
+			const elements = ['木', '火', '土', '金', '水']
+			const result = {}
+			
+			elements.forEach((element, index) => {
+				// 使用种子生成每个元素的强度
+				const strength = (seed * (index + 1)) % 100
+				result[element] = strength
+			})
+			
+			return result
+		},
+		// 计算运势
+		calculateFortune(birthDate, birthHour, birthMinute, birthPlace) {
+			const seed = this.generateSeed(birthDate, birthHour, birthMinute)
+			const placeSeed = this.hashString(birthPlace)
+			const combinedSeed = seed + placeSeed
+			
+			// 运势描述模板
+			const careerTemplates = [
+				'工作顺利，有贵人相助',
+				'需要谨慎处理工作关系',
+				'有新的工作机会出现',
+				'工作压力较大，需要调整心态',
+				'适合学习新技能，提升自己'
+			]
+			
+			const wealthTemplates = [
+				'财运亨通，有意外之财',
+				'需要谨慎投资，避免风险',
+				'正财稳定，偏财一般',
+				'有破财风险，注意理财',
+				'适合进行长期投资规划'
+			]
+			
+			const loveTemplates = [
+				'桃花运旺盛，易遇良缘',
+				'感情稳定，适合进一步发展',
+				'需要多沟通，避免误会',
+				'单身者有机会遇到心仪对象',
+				'注意处理感情中的小矛盾'
+			]
+			
+			const healthTemplates = [
+				'身体健康，精力充沛',
+				'注意休息，避免过度劳累',
+				'需要加强锻炼，提高免疫力',
+				'注意饮食健康，避免暴饮暴食',
+				'保持良好的作息习惯'
+			]
+			
+			// 使用种子选择运势描述
+			const careerIndex = (combinedSeed * 1) % careerTemplates.length
+			const wealthIndex = (combinedSeed * 2) % wealthTemplates.length
+			const loveIndex = (combinedSeed * 3) % loveTemplates.length
+			const healthIndex = (combinedSeed * 4) % healthTemplates.length
+			
+			// 生成整体运势
+			const overallScore = (seed % 60) + 40 // 40-100分
+			let overallDesc = ''
+			if (overallScore >= 90) {
+				overallDesc = '大吉大利，诸事顺遂'
+			} else if (overallScore >= 80) {
+				overallDesc = '运势不错，把握机会'
+			} else if (overallScore >= 70) {
+				overallDesc = '运势平稳，稳中求进'
+			} else if (overallScore >= 60) {
+				overallDesc = '运势一般，谨慎行事'
+			} else {
+				overallDesc = '运势低迷，韬光养晦'
+			}
+			
+			return {
+				overall: overallDesc,
+				career: careerTemplates[careerIndex],
+				wealth: wealthTemplates[wealthIndex],
+				love: loveTemplates[loveIndex],
+				health: healthTemplates[healthIndex]
+			}
+		},
+		// 字符串哈希函数
+		hashString(str) {
+			let hash = 0
+			for (let i = 0; i < str.length; i++) {
+				const char = str.charCodeAt(i)
+				hash = ((hash << 5) - hash) + char
+				hash = hash & hash
+			}
+			return Math.abs(hash)
 		},
 		getFortuneTitle(key) {
 			const titleMap = {
@@ -269,19 +510,18 @@ export default {
 			}
 			return titleMap[key]
 		},
-		getStarStyle(index) {
-			const x = Math.random() * 100
-			const y = Math.random() * 100
-			const size = Math.random() * 2 + 1
-			const delay = Math.random() * 2
-			
-			return {
-				left: `${x}%`,
-				top: `${y}%`,
-				width: `${size}rpx`,
-				height: `${size}rpx`,
-				animationDelay: `${delay}s`
-			}
+		goToHome() {
+			uni.switchTab({
+				url: '/pages/index/index'
+			})
+		},
+		closeReport() {
+			this.showReport = false
+		},
+		recalculate() {
+			uni.redirectTo({
+				url: '/pages/daily/index'
+			})
 		}
 	}
 }
@@ -310,8 +550,6 @@ export default {
 
 .stars {
 	position: absolute;
-	width: 2rpx;
-	height: 2rpx;
 	background: #fff;
 	border-radius: 50%;
 	animation: twinkle 2s infinite;
@@ -642,5 +880,43 @@ export default {
 	font-size: 28rpx;
 	color: #e6d5ff;
 	text-shadow: 0 0 10rpx rgba(230,213,255,0.5);
+}
+
+.report-buttons {
+	display: flex;
+	justify-content: center;
+	gap: 40rpx;
+	margin-top: 60rpx;
+}
+
+.report-btn {
+	width: 240rpx;
+	height: 80rpx;
+	border-radius: 40rpx;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	box-shadow: 0 0 20rpx rgba(255,215,0,0.5);
+}
+
+.report-btn text {
+	font-size: 32rpx;
+	font-weight: bold;
+}
+
+.report-btn.recalculate {
+	background: linear-gradient(90deg, #ffd700, #ffa500);
+}
+
+.report-btn.recalculate text {
+	color: #1a0b2e;
+}
+
+.report-btn.back-home {
+	background: linear-gradient(90deg, #4a90e2, #357abd);
+}
+
+.report-btn.back-home text {
+	color: #fff;
 }
 </style> 

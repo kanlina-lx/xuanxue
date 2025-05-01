@@ -2,7 +2,16 @@
 	<view class="container">
 		<!-- 星空背景 -->
 		<view class="star-field">
-			<view class="stars" v-for="i in 200" :key="i" :style="getStarStyle(i)"></view>
+			<view class="stars" v-for="(star, index) in stars" :key="'star-' + index" 
+				:style="{
+					left: star.x + 'px',
+					top: star.y + 'px',
+					width: star.size + 'px',
+					height: star.size + 'px',
+					opacity: star.opacity,
+					animationDelay: star.delay + 's'
+				}">
+			</view>
 		</view>
 		
 		<!-- 分析流程 -->
@@ -144,7 +153,7 @@
 			</view>
 			
 			<!-- 最终报告 -->
-			<view class="final-report" v-if="finalReport.show">
+			<view class="final-report" v-if="finalReport.show" @click="closeReport">
 				<view class="report-content">
 					<view v-for="(item, index) in finalReport.content" :key="index" 
 						:class="['report-item', item.type, { 'show': item.show }]">
@@ -164,6 +173,15 @@
 						<template v-else-if="item.type === 'conclusion'">
 							<text class="report-conclusion">{{item.text}}</text>
 						</template>
+					</view>
+					<!-- 报告底部按钮 -->
+					<view class="report-buttons">
+						<view class="report-btn recalculate" @click="recalculate">
+							<text>重新计算</text>
+						</view>
+						<view class="report-btn back-home" @click="goToHome">
+							<text>返回首页</text>
+						</view>
 					</view>
 				</view>
 			</view>
@@ -194,11 +212,14 @@ export default {
 			finalReport: {
 				show: false,
 				content: []
-			}
+			},
+			stars: [],
+			showRecalculateBtn: false
 		}
 	},
 	onLoad() {
-		this.startAnalysis()
+		this.initBackground()
+		this.getUserInfo()
 	},
 	onShow() {
 		// 每次页面显示时检查用户信息是否更新
@@ -209,7 +230,64 @@ export default {
 		this.getUserInfo()
 	},
 	methods: {
+		initBackground() {
+			// 从缓存中获取星星数据
+			const cachedStars = uni.getStorageSync('backgroundStars');
+			if (cachedStars && cachedStars.length > 0) {
+				this.stars = cachedStars;
+				return;
+			}
+			
+			// 如果没有缓存，生成新的星星数据
+			const windowWidth = uni.getSystemInfoSync().windowWidth;
+			const windowHeight = uni.getSystemInfoSync().windowHeight;
+			
+			const stars = Array(200).fill().map(() => ({
+				x: Math.random() * windowWidth,
+				y: Math.random() * windowHeight,
+				size: Math.random() * 2 + 1,
+				opacity: Math.random() * 0.5 + 0.5,
+				delay: Math.random() * 2
+			}));
+			
+			// 保存到缓存
+			uni.setStorageSync('backgroundStars', stars);
+			this.stars = stars;
+		},
 		startAnalysis() {
+			if (!this.userInfo || !this.userInfo.birthDate) {
+				console.error('用户信息不完整')
+				uni.switchTab({
+					url: '/pages/user/index',
+					fail: (err) => {
+						console.error('跳转失败:', err)
+						uni.showToast({
+							title: '请先完善个人信息',
+							icon: 'none',
+							duration: 2000
+						})
+					}
+				})
+				return
+			}
+			
+			// 重置分析状态
+			this.currentStep = 0
+			this.analysisLines = []
+			this.palaces = []
+			this.spouseStars = []
+			this.starPaths = []
+			this.yearAnalysis = []
+			this.traits = []
+			this.timeWindows = []
+			this.warnings = []
+			this.dimensions = []
+			this.finalReport = {
+				show: false,
+				content: []
+			}
+			
+			// 开始完整的分析流程
 			this.analyzePalace()
 		},
 		
@@ -787,7 +865,21 @@ export default {
 			this.startAnimation()
 		},
 		
-		// ... 其他方法
+		goToHome() {
+			uni.switchTab({
+				url: '/pages/index/index'
+			})
+		},
+		
+		closeReport() {
+			this.finalReport.show = false
+		},
+		
+		recalculate() {
+			uni.redirectTo({
+				url: '/pages/love/index'
+			})
+		}
 	}
 }
 </script>
@@ -815,8 +907,6 @@ export default {
 
 .stars {
 	position: absolute;
-	width: 2rpx;
-	height: 2rpx;
 	background: #fff;
 	border-radius: 50%;
 	animation: twinkle 2s infinite;
@@ -1060,6 +1150,9 @@ export default {
 	opacity: 0;
 	transform: translateX(-20rpx);
 	transition: all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+	position: relative;
+	z-index: 10;
+	margin-top: 100rpx;
 }
 
 .trait-match.show {
@@ -1335,5 +1428,43 @@ export default {
 	line-height: 1.6;
 	text-align: center;
 	font-weight: bold;
+}
+
+.report-buttons {
+	display: flex;
+	justify-content: center;
+	gap: 40rpx;
+	margin-top: 60rpx;
+}
+
+.report-btn {
+	width: 240rpx;
+	height: 80rpx;
+	border-radius: 40rpx;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	box-shadow: 0 0 20rpx rgba(255,215,0,0.5);
+}
+
+.report-btn text {
+	font-size: 32rpx;
+	font-weight: bold;
+}
+
+.report-btn.recalculate {
+	background: linear-gradient(90deg, #ffd700, #ffa500);
+}
+
+.report-btn.recalculate text {
+	color: #1a0b2e;
+}
+
+.report-btn.back-home {
+	background: linear-gradient(90deg, #4a90e2, #357abd);
+}
+
+.report-btn.back-home text {
+	color: #fff;
 }
 </style> 

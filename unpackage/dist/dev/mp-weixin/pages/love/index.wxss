@@ -19,8 +19,6 @@
 }
 .stars {
 	position: absolute;
-	width: 2rpx;
-	height: 2rpx;
 	background: #fff;
 	border-radius: 50%;
 	animation: twinkle 2s infinite;
@@ -248,6 +246,9 @@
 	opacity: 0;
 	transform: translateX(-20rpx);
 	transition: all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+	position: relative;
+	z-index: 10;
+	margin-top: 100rpx;
 }
 .trait-match.show {
 	opacity: 1;
@@ -497,4 +498,35 @@ to { opacity: 1;
 	line-height: 1.6;
 	text-align: center;
 	font-weight: bold;
+}
+.report-buttons {
+	display: flex;
+	justify-content: center;
+	gap: 40rpx;
+	margin-top: 60rpx;
+}
+.report-btn {
+	width: 240rpx;
+	height: 80rpx;
+	border-radius: 40rpx;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	box-shadow: 0 0 20rpx rgba(255,215,0,0.5);
+}
+.report-btn text {
+	font-size: 32rpx;
+	font-weight: bold;
+}
+.report-btn.recalculate {
+	background: linear-gradient(90deg, #ffd700, #ffa500);
+}
+.report-btn.recalculate text {
+	color: #1a0b2e;
+}
+.report-btn.back-home {
+	background: linear-gradient(90deg, #4a90e2, #357abd);
+}
+.report-btn.back-home text {
+	color: #fff;
 }

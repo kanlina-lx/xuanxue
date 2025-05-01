@@ -22,11 +22,14 @@ const _sfc_main = {
       finalReport: {
         show: false,
         content: []
-      }
+      },
+      stars: [],
+      showRecalculateBtn: false
     };
   },
   onLoad() {
-    this.startAnalysis();
+    this.initBackground();
+    this.getUserInfo();
   },
   onShow() {
     this.checkUserInfoUpdate();
@@ -35,7 +38,54 @@ const _sfc_main = {
     this.getUserInfo();
   },
   methods: {
+    initBackground() {
+      const cachedStars = common_vendor.index.getStorageSync("backgroundStars");
+      if (cachedStars && cachedStars.length > 0) {
+        this.stars = cachedStars;
+        return;
+      }
+      const windowWidth = common_vendor.index.getSystemInfoSync().windowWidth;
+      const windowHeight = common_vendor.index.getSystemInfoSync().windowHeight;
+      const stars = Array(200).fill().map(() => ({
+        x: Math.random() * windowWidth,
+        y: Math.random() * windowHeight,
+        size: Math.random() * 2 + 1,
+        opacity: Math.random() * 0.5 + 0.5,
+        delay: Math.random() * 2
+      }));
+      common_vendor.index.setStorageSync("backgroundStars", stars);
+      this.stars = stars;
+    },
     startAnalysis() {
+      if (!this.userInfo || !this.userInfo.birthDate) {
+        common_vendor.index.__f__("error", "at pages/love/index.vue:259", "用户信息不完整");
+        common_vendor.index.switchTab({
+          url: "/pages/user/index",
+          fail: (err) => {
+            common_vendor.index.__f__("error", "at pages/love/index.vue:263", "跳转失败:", err);
+            common_vendor.index.showToast({
+              title: "请先完善个人信息",
+              icon: "none",
+              duration: 2e3
+            });
+          }
+        });
+        return;
+      }
+      this.currentStep = 0;
+      this.analysisLines = [];
+      this.palaces = [];
+      this.spouseStars = [];
+      this.starPaths = [];
+      this.yearAnalysis = [];
+      this.traits = [];
+      this.timeWindows = [];
+      this.warnings = [];
+      this.dimensions = [];
+      this.finalReport = {
+        show: false,
+        content: []
+      };
       this.analyzePalace();
     },
     analyzePalace() {
@@ -420,15 +470,15 @@ const _sfc_main = {
       try {
         const userInfo = common_vendor.index.getStorageSync("userInfo");
         if (userInfo && userInfo.birthDate) {
-          common_vendor.index.__f__("log", "at pages/love/index.vue:643", "获取到的用户信息:", userInfo);
+          common_vendor.index.__f__("log", "at pages/love/index.vue:721", "获取到的用户信息:", userInfo);
           this.userInfo = userInfo;
           this.startAnalysis();
         } else {
-          common_vendor.index.__f__("log", "at pages/love/index.vue:647", "用户信息不完整:", userInfo);
+          common_vendor.index.__f__("log", "at pages/love/index.vue:725", "用户信息不完整:", userInfo);
           common_vendor.index.switchTab({
             url: "/pages/user/index",
             fail: (err) => {
-              common_vendor.index.__f__("error", "at pages/love/index.vue:652", "跳转失败:", err);
+              common_vendor.index.__f__("error", "at pages/love/index.vue:730", "跳转失败:", err);
               common_vendor.index.showToast({
                 title: "请先完善个人信息",
                 icon: "none",
@@ -438,11 +488,11 @@ const _sfc_main = {
           });
         }
       } catch (e) {
-        common_vendor.index.__f__("error", "at pages/love/index.vue:662", "获取用户信息失败:", e);
+        common_vendor.index.__f__("error", "at pages/love/index.vue:740", "获取用户信息失败:", e);
         common_vendor.index.switchTab({
           url: "/pages/user/index",
           fail: (err) => {
-            common_vendor.index.__f__("error", "at pages/love/index.vue:666", "跳转失败:", err);
+            common_vendor.index.__f__("error", "at pages/love/index.vue:744", "跳转失败:", err);
             common_vendor.index.showToast({
               title: "请先完善个人信息",
               icon: "none",
@@ -458,7 +508,7 @@ const _sfc_main = {
         const userInfo = common_vendor.index.getStorageSync("userInfo");
         if (userInfo && userInfo.birthDate) {
           if (JSON.stringify(userInfo) !== JSON.stringify(this.userInfo)) {
-            common_vendor.index.__f__("log", "at pages/love/index.vue:684", "用户信息已更新:", userInfo);
+            common_vendor.index.__f__("log", "at pages/love/index.vue:762", "用户信息已更新:", userInfo);
             this.userInfo = userInfo;
             this.currentStep = 0;
             this.analysisLines = [];
@@ -477,11 +527,11 @@ const _sfc_main = {
             this.startAnalysis();
           }
         } else {
-          common_vendor.index.__f__("log", "at pages/love/index.vue:705", "用户信息不完整:", userInfo);
+          common_vendor.index.__f__("log", "at pages/love/index.vue:783", "用户信息不完整:", userInfo);
           common_vendor.index.switchTab({
             url: "/pages/user/index",
             fail: (err) => {
-              common_vendor.index.__f__("error", "at pages/love/index.vue:709", "跳转失败:", err);
+              common_vendor.index.__f__("error", "at pages/love/index.vue:787", "跳转失败:", err);
               common_vendor.index.showToast({
                 title: "请先完善个人信息",
                 icon: "none",
@@ -491,11 +541,11 @@ const _sfc_main = {
           });
         }
       } catch (e) {
-        common_vendor.index.__f__("error", "at pages/love/index.vue:719", "检查用户信息更新失败:", e);
+        common_vendor.index.__f__("error", "at pages/love/index.vue:797", "检查用户信息更新失败:", e);
         common_vendor.index.switchTab({
           url: "/pages/user/index",
           fail: (err) => {
-            common_vendor.index.__f__("error", "at pages/love/index.vue:723", "跳转失败:", err);
+            common_vendor.index.__f__("error", "at pages/love/index.vue:801", "跳转失败:", err);
             common_vendor.index.showToast({
               title: "请先完善个人信息",
               icon: "none",
@@ -508,15 +558,15 @@ const _sfc_main = {
     // 计算运势
     calculateFortune() {
       if (!this.userInfo || !this.userInfo.birthDate) {
-        common_vendor.index.__f__("error", "at pages/love/index.vue:737", "用户信息缺失");
+        common_vendor.index.__f__("error", "at pages/love/index.vue:815", "用户信息缺失");
         common_vendor.index.navigateTo({
           url: "/pages/user/index",
           fail: (err) => {
-            common_vendor.index.__f__("error", "at pages/love/index.vue:741", "跳转失败:", err);
+            common_vendor.index.__f__("error", "at pages/love/index.vue:819", "跳转失败:", err);
             common_vendor.index.redirectTo({
               url: "/pages/user/index",
               fail: (err2) => {
-                common_vendor.index.__f__("error", "at pages/love/index.vue:745", "重定向失败:", err2);
+                common_vendor.index.__f__("error", "at pages/love/index.vue:823", "重定向失败:", err2);
                 common_vendor.index.showToast({
                   title: "请先完善个人信息",
                   icon: "none",
@@ -547,16 +597,33 @@ const _sfc_main = {
         bad: this.generateAdvice(seed, "bad")
       };
       this.startAnimation();
+    },
+    goToHome() {
+      common_vendor.index.switchTab({
+        url: "/pages/index/index"
+      });
+    },
+    closeReport() {
+      this.finalReport.show = false;
+    },
+    recalculate() {
+      common_vendor.index.redirectTo({
+        url: "/pages/love/index"
+      });
     }
-    // ... 其他方法
   }
 };
 function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
   return common_vendor.e({
-    a: common_vendor.f(200, (i, k0, i0) => {
+    a: common_vendor.f($data.stars, (star, index, i0) => {
       return {
-        a: i,
-        b: common_vendor.s($options.getStarStyle(i))
+        a: "star-" + index,
+        b: star.x + "px",
+        c: star.y + "px",
+        d: star.size + "px",
+        e: star.size + "px",
+        f: star.opacity,
+        g: star.delay + "s"
       };
     }),
     b: $data.currentStep === 0
@@ -734,7 +801,10 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
           "show": item.show
         })
       });
-    })
+    }),
+    C: common_vendor.o((...args) => $options.recalculate && $options.recalculate(...args)),
+    D: common_vendor.o((...args) => $options.goToHome && $options.goToHome(...args)),
+    E: common_vendor.o((...args) => $options.closeReport && $options.closeReport(...args))
   } : {});
 }
 const MiniProgramPage = /* @__PURE__ */ common_vendor._export_sfc(_sfc_main, [["render", _sfc_render]]);

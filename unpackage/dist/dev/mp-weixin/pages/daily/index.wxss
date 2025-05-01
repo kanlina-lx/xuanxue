@@ -19,8 +19,6 @@
 }
 .stars {
 	position: absolute;
-	width: 2rpx;
-	height: 2rpx;
 	background: #fff;
 	border-radius: 50%;
 	animation: twinkle 2s infinite;
@@ -322,4 +320,35 @@ to { opacity: 1;
 	font-size: 28rpx;
 	color: #e6d5ff;
 	text-shadow: 0 0 10rpx rgba(230,213,255,0.5);
+}
+.report-buttons {
+	display: flex;
+	justify-content: center;
+	gap: 40rpx;
+	margin-top: 60rpx;
+}
+.report-btn {
+	width: 240rpx;
+	height: 80rpx;
+	border-radius: 40rpx;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	box-shadow: 0 0 20rpx rgba(255,215,0,0.5);
+}
+.report-btn text {
+	font-size: 32rpx;
+	font-weight: bold;
+}
+.report-btn.recalculate {
+	background: linear-gradient(90deg, #ffd700, #ffa500);
+}
+.report-btn.recalculate text {
+	color: #1a0b2e;
+}
+.report-btn.back-home {
+	background: linear-gradient(90deg, #4a90e2, #357abd);
+}
+.report-btn.back-home text {
+	color: #fff;
 }

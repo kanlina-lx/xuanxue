@@ -178,34 +178,8 @@ export default {
 			processText: '请静心默念所问之事...',
 			currentYao: 0,
 			allCoinResults: [],
-			stars: Array(100).fill().map(() => {
-				const windowWidth = uni.getSystemInfoSync().windowWidth;
-				const windowHeight = uni.getSystemInfoSync().windowHeight;
-				return {
-					x: Math.random() * windowWidth,
-					y: Math.random() * windowHeight,
-					startX: Math.random() * windowWidth,
-					startY: Math.random() * windowHeight,
-					targetX: windowWidth / 2,
-					targetY: windowHeight / 2,
-					size: Math.random() * 1 + 0.5,
-					opacity: Math.random() * 0.5 + 0.5,
-					delay: Math.random() * 2,
-					progress: 0,
-					speed: Math.random() * 0.02 + 0.01
-				};
-			}),
-			meteors: Array(5).fill().map(() => {
-				const windowWidth = uni.getSystemInfoSync().windowWidth;
-				const windowHeight = uni.getSystemInfoSync().windowHeight;
-				return {
-					x: Math.random() * windowWidth,
-					y: Math.random() * windowHeight,
-					size: Math.random() * 1.5 + 0.5,
-					opacity: Math.random() * 0.8 + 0.2,
-					delay: Math.random() * 3
-				};
-			}),
+			stars: uni.getStorageSync('backgroundStars') || [],
+			meteors: uni.getStorageSync('backgroundMeteors') || [],
 			showResult: false,
 			showHexagram: false,
 			showJudgment: false,
@@ -227,6 +201,44 @@ export default {
 		}
 	},
 	methods: {
+		// 修改初始化星空背景的方法
+		initBackground() {
+			// 如果已经有缓存的背景数据，直接使用
+			if (uni.getStorageSync('backgroundStars') && uni.getStorageSync('backgroundMeteors')) {
+				this.stars = uni.getStorageSync('backgroundStars');
+				this.meteors = uni.getStorageSync('backgroundMeteors');
+				return;
+			}
+			
+			const windowWidth = uni.getSystemInfoSync().windowWidth;
+			const windowHeight = uni.getSystemInfoSync().windowHeight;
+			
+			// 初始化星星
+			const stars = Array(100).fill().map(() => ({
+				x: Math.random() * windowWidth,
+				y: Math.random() * windowHeight,
+				size: Math.random() * 1 + 0.5,
+				opacity: Math.random() * 0.5 + 0.5,
+				delay: Math.random() * 2
+			}));
+			
+			// 初始化流星
+			const meteors = Array(5).fill().map(() => ({
+				x: Math.random() * windowWidth,
+				y: Math.random() * windowHeight,
+				size: Math.random() * 1.5 + 0.5,
+				opacity: Math.random() * 0.8 + 0.2,
+				delay: Math.random() * 3
+			}));
+			
+			// 保存到缓存
+			uni.setStorageSync('backgroundStars', stars);
+			uni.setStorageSync('backgroundMeteors', meteors);
+			
+			this.stars = stars;
+			this.meteors = meteors;
+		},
+		
 		// 星星移动到目标位置
 		async moveStarsToTarget() {
 			return new Promise((resolve) => {
@@ -387,7 +399,7 @@ export default {
 			return coinResults;
 		},
 
-		// 投掷一次硬币
+		// 修改 throwCoins 方法
 		async throwCoins() {
 			// 如果已经有硬币显示，先让它们消失
 			if (this.showCoins) {
@@ -593,8 +605,11 @@ export default {
 			return this.adviceData[gua.name] || []
 		}
 	},
+	onLoad() {
+		this.initBackground(); // 在页面加载时初始化背景
+	},
 	mounted() {
-		this.loadHistory()
+		this.loadHistory();
 	}
 }
 </script>
@@ -725,21 +740,27 @@ export default {
 	display: flex;
 	align-items: center;
 	justify-content: center;
+	transform: rotate(0deg);
+	-webkit-transform: rotate(0deg);
 }
 
 .shell-shake {
-	animation: shell-shake 0.5s ease-in-out;
+	animation: shell-shake 0.3s ease-in-out;
+	-webkit-animation: shell-shake 0.3s ease-in-out;
 }
 
 @keyframes shell-shake {
 	0%, 100% {
 		transform: rotate(0deg) scale(1);
+		-webkit-transform: rotate(0deg) scale(1);
 	}
 	25% {
 		transform: rotate(-8deg) scale(0.95);
+		-webkit-transform: rotate(-8deg) scale(0.95);
 	}
 	75% {
 		transform: rotate(8deg) scale(0.95);
+		-webkit-transform: rotate(8deg) scale(0.95);
 	}
 }
 
@@ -749,6 +770,8 @@ export default {
 	transition: all 0.3s ease;
 	position: relative;
 	z-index: 1;
+	transform: rotate(0deg);
+	-webkit-transform: rotate(0deg);
 }
 
 .hint-text {
