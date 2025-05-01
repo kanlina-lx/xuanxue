@@ -1,5 +1,5 @@
 {
-    "name" : "xuanxue",
+    "name" : "指南针命理",
     "appid" : "__UNI__F0A01CC",
     "description" : "",
     "versionName" : "1.0.0",
@@ -50,7 +50,7 @@
     "quickapp" : {},
     /* 小程序特有相关 */
     "mp-weixin" : {
-        "appid" : "",
+        "appid" : "wx4a6626c4cf0ad7da",
         "setting" : {
             "urlCheck" : false
         },

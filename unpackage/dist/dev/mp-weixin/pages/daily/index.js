@@ -3,124 +3,328 @@ const common_vendor = require("../../common/vendor.js");
 const _sfc_main = {
   data() {
     return {
-      showAnimation: true,
-      showFortune: false,
+      userInfoComplete: false,
+      userInfo: null,
       currentStep: 0,
-      currentDate: "",
-      userBirthday: "",
-      // 用户生日
-      fortuneData: {
-        bazi: {
-          career: 0,
-          wealth: 0,
-          relationship: 0
-        },
-        ziwei: {
-          minggong: 0,
-          shengong: 0
-        },
-        qimen: {
-          tianpan: 0,
-          dipan: 0
-        },
-        advice: {
-          good: [],
-          bad: []
-        }
+      pillars: [],
+      elements: {},
+      fortune: {
+        overall: "",
+        career: "",
+        wealth: "",
+        love: "",
+        health: ""
       },
-      calculationLines: [],
-      baziPillars: [],
-      ziweiPalaces: [],
-      qimenGrid: [],
-      liuyaoLines: [],
-      meihuaPetals: [],
-      taiyiStars: [],
-      liurenPalaces: [],
-      zeriDays: [],
-      fengshuiDirections: []
+      analysisLines: [
+        { text: "正在分析八字...", show: false },
+        { text: "正在计算天干地支...", show: false },
+        { text: "正在生成命盘...", show: false }
+      ],
+      elementLines: [
+        { text: "正在分析五行...", show: false },
+        { text: "正在计算旺衰...", show: false },
+        { text: "正在生成运势...", show: false }
+      ],
+      fortuneLines: [
+        { text: "正在分析运势...", show: false },
+        { text: "正在计算吉凶...", show: false },
+        { text: "正在生成建议...", show: false }
+      ],
+      showReport: false,
+      reportItems: [
+        { show: false },
+        { show: false },
+        { show: false },
+        { show: false }
+      ],
+      lastUpdateTime: null,
+      stars: [],
+      meteors: [],
+      showRecalculateBtn: false
     };
   },
-  mounted() {
-    const now = /* @__PURE__ */ new Date();
-    this.currentDate = `${now.getFullYear()}年${now.getMonth() + 1}月${now.getDate()}日`;
-    this.getUserBirthday();
+  onShow() {
+    this.checkUserInfo();
+  },
+  onLoad() {
+    this.initBackground();
+  },
+  watch: {
+    "userInfo.birthDate": {
+      handler(newVal) {
+        if (newVal) {
+          this.resetAnalysis();
+          this.startAnalysis();
+        }
+      },
+      deep: true
+    }
   },
   methods: {
-    // 获取用户生日
-    getUserBirthday() {
-      this.userBirthday = "1990-01-01";
-      this.calculateFortune();
+    initBackground() {
+      const cachedStars = common_vendor.index.getStorageSync("backgroundStars");
+      if (cachedStars && cachedStars.length > 0) {
+        this.stars = cachedStars;
+        return;
+      }
+      const windowWidth = common_vendor.index.getSystemInfoSync().windowWidth;
+      const windowHeight = common_vendor.index.getSystemInfoSync().windowHeight;
+      const stars = Array(200).fill().map(() => ({
+        x: Math.random() * windowWidth,
+        y: Math.random() * windowHeight,
+        size: Math.random() * 2 + 1,
+        opacity: Math.random() * 0.5 + 0.5,
+        delay: Math.random() * 2
+      }));
+      common_vendor.index.setStorageSync("backgroundStars", stars);
+      this.stars = stars;
     },
-    // 计算运势
-    calculateFortune() {
-      const seed = this.getSeed(this.userBirthday, this.currentDate);
-      this.fortuneData.bazi = {
-        career: this.calculateValue(seed, "career"),
-        wealth: this.calculateValue(seed, "wealth"),
-        relationship: this.calculateValue(seed, "relationship")
+    resetAnalysis() {
+      this.currentStep = 0;
+      this.pillars = [];
+      this.elements = {};
+      this.fortune = {
+        overall: "",
+        career: "",
+        wealth: "",
+        love: "",
+        health: ""
       };
-      this.fortuneData.ziwei = {
-        minggong: this.calculateValue(seed, "minggong"),
-        shengong: this.calculateValue(seed, "shengong")
+      this.showReport = false;
+      this.reportItems = this.reportItems.map(() => ({ show: false }));
+      this.lastUpdateTime = (/* @__PURE__ */ new Date()).getTime();
+      common_vendor.index.removeStorageSync("fortuneData");
+    },
+    checkUserInfo() {
+      const userInfo = common_vendor.index.getStorageSync("userInfo");
+      if (userInfo && userInfo.birthDate && userInfo.birthTime && userInfo.birthPlace) {
+        this.userInfoComplete = true;
+        if (JSON.stringify(userInfo) !== JSON.stringify(this.userInfo)) {
+          this.userInfo = userInfo;
+          this.resetAnalysis();
+          this.startAnalysis();
+        }
+      } else {
+        this.userInfoComplete = false;
+      }
+    },
+    goToUserCenter() {
+      common_vendor.index.switchTab({
+        url: "/pages/user/index"
+      });
+    },
+    startAnalysis() {
+      if (!this.userInfo || !this.userInfo.birthDate) {
+        common_vendor.index.__f__("error", "at pages/daily/index.vue:233", "用户信息不完整");
+        common_vendor.index.switchTab({
+          url: "/pages/user/index",
+          fail: (err) => {
+            common_vendor.index.__f__("error", "at pages/daily/index.vue:237", "跳转失败:", err);
+            common_vendor.index.showToast({
+              title: "请先完善个人信息",
+              icon: "none",
+              duration: 2e3
+            });
+          }
+        });
+        return;
+      }
+      this.currentStep = 0;
+      this.pillars = [];
+      this.elements = {};
+      this.fortune = {
+        overall: "",
+        career: "",
+        wealth: "",
+        love: "",
+        health: ""
       };
-      this.fortuneData.qimen = {
-        tianpan: this.calculateValue(seed, "tianpan"),
-        dipan: this.calculateValue(seed, "dipan")
-      };
-      this.fortuneData.advice = {
-        good: this.generateAdvice(seed, "good"),
-        bad: this.generateAdvice(seed, "bad")
-      };
-      this.startAnimation();
+      this.showReport = false;
+      this.reportItems = this.reportItems.map(() => ({ show: false }));
+      this.lastUpdateTime = (/* @__PURE__ */ new Date()).getTime();
+      this.analyzePillars();
+    },
+    analyzePillars() {
+      this.analysisLines = this.analysisLines.map((line) => ({ ...line, show: false }));
+      this.analysisLines.forEach((line, index) => {
+        setTimeout(() => {
+          this.$set(this.analysisLines, index, { ...line, show: true });
+        }, index * 500);
+      });
+      setTimeout(() => {
+        const today = /* @__PURE__ */ new Date();
+        const birthDate = new Date(this.userInfo.birthDate);
+        const birthTime = this.userInfo.birthTime.split(":");
+        const birthHour = parseInt(birthTime[0]);
+        const birthMinute = parseInt(birthTime[1]);
+        const seed = this.generateSeed(birthDate, birthHour, birthMinute);
+        const pillars = this.generatePillars(seed, today);
+        this.pillars = pillars.map((pillar) => ({ ...pillar, show: false }));
+        this.pillars.forEach((pillar, index) => {
+          setTimeout(() => {
+            this.$set(this.pillars, index, { ...pillar, show: true });
+          }, index * 200);
+        });
+        setTimeout(() => {
+          this.currentStep = 1;
+          this.analyzeElements();
+        }, 2e3);
+      }, 1500);
+    },
+    analyzeElements() {
+      this.elementLines = this.elementLines.map((line) => ({ ...line, show: false }));
+      this.elementLines.forEach((line, index) => {
+        setTimeout(() => {
+          this.$set(this.elementLines, index, { ...line, show: true });
+        }, index * 500);
+      });
+      setTimeout(() => {
+        const birthDate = new Date(this.userInfo.birthDate);
+        const birthTime = this.userInfo.birthTime.split(":");
+        const birthHour = parseInt(birthTime[0]);
+        const birthMinute = parseInt(birthTime[1]);
+        const elements = this.calculateElements(birthDate, birthHour, birthMinute);
+        this.elements = elements;
+        setTimeout(() => {
+          this.currentStep = 2;
+          this.analyzeFortune();
+        }, 2e3);
+      }, 1500);
+    },
+    analyzeFortune() {
+      this.fortuneLines = this.fortuneLines.map((line) => ({ ...line, show: false }));
+      this.fortuneLines.forEach((line, index) => {
+        setTimeout(() => {
+          this.$set(this.fortuneLines, index, { ...line, show: true });
+        }, index * 500);
+      });
+      setTimeout(() => {
+        const birthDate = new Date(this.userInfo.birthDate);
+        const birthTime = this.userInfo.birthTime.split(":");
+        const birthHour = parseInt(birthTime[0]);
+        const birthMinute = parseInt(birthTime[1]);
+        const birthPlace = this.userInfo.birthPlace;
+        const fortune = this.calculateFortune(birthDate, birthHour, birthMinute, birthPlace);
+        this.fortune = fortune;
+        setTimeout(() => {
+          this.showReport = true;
+          this.reportItems.forEach((item, index) => {
+            setTimeout(() => {
+              this.$set(this.reportItems, index, { ...item, show: true });
+            }, index * 500);
+          });
+        }, 2e3);
+      }, 1500);
     },
     // 生成种子值
-    getSeed(birthday, date) {
-      const birthDate = new Date(birthday);
-      const currentDate = new Date(date);
-      return `${birthDate.getTime()}_${currentDate.getTime()}`;
+    generateSeed(birthDate, birthHour, birthMinute) {
+      const year = birthDate.getFullYear();
+      const month = birthDate.getMonth() + 1;
+      const day = birthDate.getDate();
+      return year * 1e6 + month * 1e4 + day * 100 + birthHour * 10 + birthMinute;
     },
-    // 计算运势值
-    calculateValue(seed, type) {
-      const hash = this.hashString(seed + type);
-      return Math.floor(hash % 30 + 70);
+    // 生成八字
+    generatePillars(seed, today) {
+      const heavenlyStems = ["甲", "乙", "丙", "丁", "戊", "己", "庚", "辛", "壬", "癸"];
+      const earthlyBranches = ["子", "丑", "寅", "卯", "辰", "巳", "午", "未", "申", "酉", "戌", "亥"];
+      const elements = ["木", "火", "土", "金", "水"];
+      const yearIndex = (seed + today.getFullYear()) % heavenlyStems.length;
+      const monthIndex = (seed + today.getMonth() + 1) % heavenlyStems.length;
+      const dayIndex = (seed + today.getDate()) % heavenlyStems.length;
+      const hourIndex = (seed + today.getHours()) % heavenlyStems.length;
+      return [
+        {
+          name: "年柱",
+          value: heavenlyStems[yearIndex] + earthlyBranches[yearIndex % earthlyBranches.length],
+          element: elements[yearIndex % elements.length]
+        },
+        {
+          name: "月柱",
+          value: heavenlyStems[monthIndex] + earthlyBranches[monthIndex % earthlyBranches.length],
+          element: elements[monthIndex % elements.length]
+        },
+        {
+          name: "日柱",
+          value: heavenlyStems[dayIndex] + earthlyBranches[dayIndex % earthlyBranches.length],
+          element: elements[dayIndex % elements.length]
+        },
+        {
+          name: "时柱",
+          value: heavenlyStems[hourIndex] + earthlyBranches[hourIndex % earthlyBranches.length],
+          element: elements[hourIndex % elements.length]
+        }
+      ];
     },
-    // 生成建议
-    generateAdvice(seed, type) {
-      const goodAdvices = [
-        "投资理财",
-        "商务洽谈",
-        "约会",
-        "学习进修",
-        "健身运动",
-        "签订合同",
-        "求职面试",
-        "搬家",
-        "装修",
-        "旅行"
-      ];
-      const badAdvices = [
-        "冲动消费",
-        "重大决策",
-        "借贷",
-        "赌博",
-        "争吵",
-        "熬夜",
-        "暴饮暴食",
-        "剧烈运动",
-        "危险活动",
-        "拖延"
-      ];
-      const hash = this.hashString(seed + type);
-      const advices = type === "good" ? goodAdvices : badAdvices;
-      const count = hash % 3 + 1;
-      const result = [];
-      for (let i = 0; i < count; i++) {
-        const index = (hash + i) % advices.length;
-        result.push(advices[index]);
-      }
+    // 计算五行
+    calculateElements(birthDate, birthHour, birthMinute) {
+      const seed = this.generateSeed(birthDate, birthHour, birthMinute);
+      const elements = ["木", "火", "土", "金", "水"];
+      const result = {};
+      elements.forEach((element, index) => {
+        const strength = seed * (index + 1) % 100;
+        result[element] = strength;
+      });
       return result;
     },
-    // 简单的字符串哈希函数
+    // 计算运势
+    calculateFortune(birthDate, birthHour, birthMinute, birthPlace) {
+      const seed = this.generateSeed(birthDate, birthHour, birthMinute);
+      const placeSeed = this.hashString(birthPlace);
+      const combinedSeed = seed + placeSeed;
+      const careerTemplates = [
+        "工作顺利，有贵人相助",
+        "需要谨慎处理工作关系",
+        "有新的工作机会出现",
+        "工作压力较大，需要调整心态",
+        "适合学习新技能，提升自己"
+      ];
+      const wealthTemplates = [
+        "财运亨通，有意外之财",
+        "需要谨慎投资，避免风险",
+        "正财稳定，偏财一般",
+        "有破财风险，注意理财",
+        "适合进行长期投资规划"
+      ];
+      const loveTemplates = [
+        "桃花运旺盛，易遇良缘",
+        "感情稳定，适合进一步发展",
+        "需要多沟通，避免误会",
+        "单身者有机会遇到心仪对象",
+        "注意处理感情中的小矛盾"
+      ];
+      const healthTemplates = [
+        "身体健康，精力充沛",
+        "注意休息，避免过度劳累",
+        "需要加强锻炼，提高免疫力",
+        "注意饮食健康，避免暴饮暴食",
+        "保持良好的作息习惯"
+      ];
+      const careerIndex = combinedSeed * 1 % careerTemplates.length;
+      const wealthIndex = combinedSeed * 2 % wealthTemplates.length;
+      const loveIndex = combinedSeed * 3 % loveTemplates.length;
+      const healthIndex = combinedSeed * 4 % healthTemplates.length;
+      const overallScore = seed % 60 + 40;
+      let overallDesc = "";
+      if (overallScore >= 90) {
+        overallDesc = "大吉大利，诸事顺遂";
+      } else if (overallScore >= 80) {
+        overallDesc = "运势不错，把握机会";
+      } else if (overallScore >= 70) {
+        overallDesc = "运势平稳，稳中求进";
+      } else if (overallScore >= 60) {
+        overallDesc = "运势一般，谨慎行事";
+      } else {
+        overallDesc = "运势低迷，韬光养晦";
+      }
+      return {
+        overall: overallDesc,
+        career: careerTemplates[careerIndex],
+        wealth: wealthTemplates[wealthIndex],
+        love: loveTemplates[loveIndex],
+        health: healthTemplates[healthIndex]
+      };
+    },
+    // 字符串哈希函数
     hashString(str) {
       let hash = 0;
       for (let i = 0; i < str.length; i++) {
@@ -130,476 +334,136 @@ const _sfc_main = {
       }
       return Math.abs(hash);
     },
-    getStarStyle(index) {
-      const x = Math.random() * 100;
-      const y = Math.random() * 100;
-      const size = Math.random() * 2 + 1;
-      const delay = Math.random() * 2;
-      return {
-        left: `${x}%`,
-        top: `${y}%`,
-        width: `${size}rpx`,
-        height: `${size}rpx`,
-        animationDelay: `${delay}s`
+    getFortuneTitle(key) {
+      const titleMap = {
+        overall: "整体运势",
+        career: "事业运势",
+        wealth: "财运分析",
+        love: "感情运势",
+        health: "健康建议"
       };
+      return titleMap[key];
     },
-    startAnimation() {
-      this.showAnimation = true;
-      this.currentStep = 0;
-      this.calculationLines = [];
-      this.baziPillars = [];
-      this.ziweiPalaces = [];
-      this.qimenGrid = [];
-      this.liuyaoLines = [];
-      this.meihuaPetals = [];
-      this.taiyiStars = [];
-      this.liurenPalaces = [];
-      this.zeriDays = [];
-      this.fengshuiDirections = [];
-      this.animateBazi();
-    },
-    animateBazi() {
-      this.calculationLines = [
-        { text: "正在计算真太阳时...", show: false },
-        { text: "正在计算年柱...", show: false },
-        { text: "正在计算月柱...", show: false },
-        { text: "正在计算日柱...", show: false },
-        { text: "正在计算时柱...", show: false }
-      ];
-      this.calculationLines.forEach((line, index) => {
-        setTimeout(() => {
-          this.$set(this.calculationLines, index, { ...line, show: true });
-          if (index > 0) {
-            this.$set(this.baziPillars, index - 1, {
-              gan: ["甲", "乙", "丙", "丁"][index - 1],
-              zhi: ["子", "丑", "寅", "卯"][index - 1],
-              show: true
-            });
-          }
-        }, index * 300);
+    goToHome() {
+      common_vendor.index.switchTab({
+        url: "/pages/index/index"
       });
-      setTimeout(() => {
-        this.currentStep = 1;
-        this.animateZiwei();
-      }, 2e3);
     },
-    animateZiwei() {
-      this.calculationLines = [
-        { text: "正在定位命宫...", show: false },
-        { text: "正在计算身宫...", show: false },
-        { text: "正在排布十二宫...", show: false },
-        { text: "正在安放主星...", show: false }
-      ];
-      this.ziweiPalaces = Array(12).fill().map((_, index) => ({
-        name: [
-          "命宫",
-          "兄弟宫",
-          "夫妻宫",
-          "子女宫",
-          "财帛宫",
-          "疾厄宫",
-          "迁移宫",
-          "仆役宫",
-          "官禄宫",
-          "田宅宫",
-          "福德宫",
-          "父母宫"
-        ][index],
-        show: false
-      }));
-      this.calculationLines.forEach((line, index) => {
-        setTimeout(() => {
-          this.$set(this.calculationLines, index, { ...line, show: true });
-          if (index === 0) {
-            this.$set(this.ziweiPalaces, 0, { ...this.ziweiPalaces[0], show: true });
-          } else if (index === 1) {
-            this.$set(this.ziweiPalaces, 6, { ...this.ziweiPalaces[6], show: true });
-          } else if (index === 2) {
-            this.ziweiPalaces.forEach((palace, i) => {
-              if (i !== 0 && i !== 6) {
-                setTimeout(() => {
-                  this.$set(this.ziweiPalaces, i, { ...palace, show: true });
-                }, (i - 1) * 100);
-              }
-            });
-          }
-        }, index * 300);
-      });
-      setTimeout(() => {
-        this.currentStep = 2;
-        this.animateQimen();
-      }, 2e3);
+    closeReport() {
+      this.showReport = false;
     },
-    animateQimen() {
-      this.calculationLines = [
-        { text: "正在排布九宫...", show: false },
-        { text: "正在计算八门...", show: false },
-        { text: "正在定位天盘...", show: false },
-        { text: "正在计算地盘...", show: false }
-      ];
-      this.qimenGrid = Array(9).fill().map((_, index) => ({
-        show: false,
-        value: ["坎", "坤", "震", "巽", "中", "乾", "兑", "艮", "离"][index]
-      }));
-      this.calculationLines.forEach((line, index) => {
-        setTimeout(() => {
-          this.$set(this.calculationLines, index, { ...line, show: true });
-          if (index === 0) {
-            this.qimenGrid.forEach((cell, i) => {
-              setTimeout(() => {
-                this.$set(this.qimenGrid, i, { ...cell, show: true });
-              }, i * 100);
-            });
-          }
-        }, index * 300);
+    recalculate() {
+      common_vendor.index.redirectTo({
+        url: "/pages/daily/index"
       });
-      setTimeout(() => {
-        this.currentStep = 3;
-        this.animateLiuyao();
-      }, 2e3);
-    },
-    animateLiuyao() {
-      this.calculationLines = [
-        { text: "正在起卦...", show: false },
-        { text: "正在排卦...", show: false },
-        { text: "正在分析卦象...", show: false },
-        { text: "正在解读爻辞...", show: false }
-      ];
-      this.liuyaoLines = Array(6).fill().map((_, index) => ({
-        name: ["初爻", "二爻", "三爻", "四爻", "五爻", "上爻"][index],
-        type: Math.random() > 0.5 ? "yang" : "yin",
-        show: false
-      }));
-      this.calculationLines.forEach((line, index) => {
-        setTimeout(() => {
-          this.$set(this.calculationLines, index, { ...line, show: true });
-          if (index < 2) {
-            this.$set(this.liuyaoLines, index, { ...this.liuyaoLines[index], show: true });
-          }
-        }, index * 300);
-      });
-      setTimeout(() => {
-        this.currentStep = 4;
-        this.animateMeihua();
-      }, 2e3);
-    },
-    animateMeihua() {
-      this.calculationLines = [
-        { text: "正在取数...", show: false },
-        { text: "正在计算卦象...", show: false },
-        { text: "正在分析卦辞...", show: false },
-        { text: "正在解读结果...", show: false }
-      ];
-      this.meihuaPetals = Array(5).fill().map((_, index) => ({
-        text: ["乾", "兑", "离", "震", "巽"][index],
-        show: false
-      }));
-      this.calculationLines.forEach((line, index) => {
-        setTimeout(() => {
-          this.$set(this.calculationLines, index, { ...line, show: true });
-          if (index < 3) {
-            this.$set(this.meihuaPetals, index, { ...this.meihuaPetals[index], show: true });
-          }
-        }, index * 300);
-      });
-      setTimeout(() => {
-        this.currentStep = 5;
-        this.animateTaiyi();
-      }, 2e3);
-    },
-    animateTaiyi() {
-      this.calculationLines = [
-        { text: "正在计算太乙数...", show: false },
-        { text: "正在排布太乙盘...", show: false },
-        { text: "正在分析太乙卦...", show: false },
-        { text: "正在解读太乙数...", show: false }
-      ];
-      this.taiyiStars = Array(9).fill().map((_, index) => ({
-        text: ["天乙", "太乙", "文昌", "天马", "禄存", "天厨", "天福", "天德", "天贵"][index],
-        show: false
-      }));
-      this.calculationLines.forEach((line, index) => {
-        setTimeout(() => {
-          this.$set(this.calculationLines, index, { ...line, show: true });
-          if (index < 3) {
-            this.$set(this.taiyiStars, index, { ...this.taiyiStars[index], show: true });
-          }
-        }, index * 300);
-      });
-      setTimeout(() => {
-        this.currentStep = 6;
-        this.animateLiuren();
-      }, 2e3);
-    },
-    animateLiuren() {
-      this.calculationLines = [
-        { text: "正在计算六壬数...", show: false },
-        { text: "正在排布六壬盘...", show: false },
-        { text: "正在分析六壬卦...", show: false },
-        { text: "正在解读六壬数...", show: false }
-      ];
-      this.liurenPalaces = Array(12).fill().map((_, index) => ({
-        text: ["子", "丑", "寅", "卯", "辰", "巳", "午", "未", "申", "酉", "戌", "亥"][index],
-        show: false
-      }));
-      this.calculationLines.forEach((line, index) => {
-        setTimeout(() => {
-          this.$set(this.calculationLines, index, { ...line, show: true });
-          if (index < 3) {
-            this.$set(this.liurenPalaces, index, { ...this.liurenPalaces[index], show: true });
-          }
-        }, index * 300);
-      });
-      setTimeout(() => {
-        this.currentStep = 7;
-        this.animateZeri();
-      }, 2e3);
-    },
-    animateZeri() {
-      this.calculationLines = [
-        { text: "正在计算黄历...", show: false },
-        { text: "正在分析吉凶...", show: false },
-        { text: "正在选择吉日...", show: false },
-        { text: "正在确定时辰...", show: false }
-      ];
-      this.zeriDays = Array(7).fill().map((_, index) => ({
-        text: ["初一", "初二", "初三", "初四", "初五", "初六", "初七"][index],
-        lucky: Math.random() > 0.5,
-        show: false
-      }));
-      this.calculationLines.forEach((line, index) => {
-        setTimeout(() => {
-          this.$set(this.calculationLines, index, { ...line, show: true });
-          if (index < 3) {
-            this.$set(this.zeriDays, index, { ...this.zeriDays[index], show: true });
-          }
-        }, index * 300);
-      });
-      setTimeout(() => {
-        this.currentStep = 8;
-        this.animateFengshui();
-      }, 2e3);
-    },
-    animateFengshui() {
-      this.calculationLines = [
-        { text: "正在计算方位...", show: false },
-        { text: "正在分析风水...", show: false },
-        { text: "正在确定吉位...", show: false },
-        { text: "正在解读风水...", show: false }
-      ];
-      this.fengshuiDirections = Array(8).fill().map((_, index) => ({
-        text: ["东", "东南", "南", "西南", "西", "西北", "北", "东北"][index],
-        lucky: Math.random() > 0.5,
-        show: false
-      }));
-      this.calculationLines.forEach((line, index) => {
-        setTimeout(() => {
-          this.$set(this.calculationLines, index, { ...line, show: true });
-          if (index < 3) {
-            this.$set(this.fengshuiDirections, index, { ...this.fengshuiDirections[index], show: true });
-          }
-        }, index * 300);
-      });
-      setTimeout(() => {
-        this.showAnimation = false;
-        setTimeout(() => {
-          this.$nextTick(() => {
-            this.showFortune = true;
-          });
-        }, 500);
-      }, 2e3);
     }
   }
 };
 function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
   return common_vendor.e({
-    a: common_vendor.f(200, (i, k0, i0) => {
+    a: common_vendor.f($data.stars, (star, index, i0) => {
       return {
-        a: i,
-        b: common_vendor.s($options.getStarStyle(i))
+        a: "star-" + index,
+        b: star.x + "px",
+        c: star.y + "px",
+        d: star.size + "px",
+        e: star.size + "px",
+        f: star.opacity,
+        g: star.delay + "s"
       };
     }),
-    b: $data.showAnimation
-  }, $data.showAnimation ? common_vendor.e({
-    c: $data.currentStep === 0
+    b: !$data.userInfoComplete
+  }, !$data.userInfoComplete ? {
+    c: common_vendor.o((...args) => $options.goToUserCenter && $options.goToUserCenter(...args))
+  } : common_vendor.e({
+    d: $data.currentStep === 0
   }, $data.currentStep === 0 ? {
-    d: common_vendor.f($data.baziPillars, (pillar, index, i0) => {
-      return {
-        a: common_vendor.t(pillar.gan),
-        b: common_vendor.t(pillar.zhi),
-        c: index,
-        d: pillar.show ? 1 : ""
-      };
-    }),
-    e: common_vendor.f($data.calculationLines, (line, index, i0) => {
+    e: common_vendor.f($data.analysisLines, (line, index, i0) => {
       return {
         a: common_vendor.t(line.text),
-        b: index,
+        b: "analysis-line-" + index,
         c: line.show ? 1 : ""
       };
-    })
+    }),
+    f: common_vendor.f($data.pillars, (pillar, index, i0) => {
+      return {
+        a: common_vendor.t(pillar.name),
+        b: common_vendor.t(pillar.value),
+        c: common_vendor.t(pillar.element),
+        d: "pillar-" + index,
+        e: pillar.show ? 1 : ""
+      };
+    }),
+    g: "bazi-analysis-" + $data.lastUpdateTime
   } : {}, {
-    f: $data.currentStep === 1
+    h: $data.currentStep === 1
   }, $data.currentStep === 1 ? {
-    g: common_vendor.f($data.ziweiPalaces, (palace, index, i0) => {
-      return {
-        a: common_vendor.t(palace.name),
-        b: index,
-        c: `rotate(${index * 30}deg)`,
-        d: palace.show ? 1 : ""
-      };
-    }),
-    h: common_vendor.f($data.calculationLines, (line, index, i0) => {
+    i: common_vendor.f($data.elementLines, (line, index, i0) => {
       return {
         a: common_vendor.t(line.text),
-        b: index,
+        b: "element-line-" + index,
         c: line.show ? 1 : ""
       };
-    })
+    }),
+    j: common_vendor.f($data.elements, (value, element, i0) => {
+      return {
+        a: common_vendor.t(element),
+        b: common_vendor.t(value.toFixed(1)),
+        c: "element-cell-" + element
+      };
+    }),
+    k: "element-analysis-" + $data.lastUpdateTime
   } : {}, {
-    i: $data.currentStep === 2
+    l: $data.currentStep === 2
   }, $data.currentStep === 2 ? {
-    j: common_vendor.f($data.qimenGrid, (cell, index, i0) => {
-      return {
-        a: common_vendor.t(cell.value),
-        b: index,
-        c: cell.show ? 1 : ""
-      };
-    }),
-    k: common_vendor.f($data.calculationLines, (line, index, i0) => {
+    m: common_vendor.f($data.fortuneLines, (line, index, i0) => {
       return {
         a: common_vendor.t(line.text),
-        b: index,
+        b: "fortune-line-" + index,
         c: line.show ? 1 : ""
       };
-    })
+    }),
+    n: common_vendor.f($data.fortune, (value, key, i0) => {
+      return {
+        a: common_vendor.t($options.getFortuneTitle(key)),
+        b: common_vendor.t(value),
+        c: "fortune-cell-" + key
+      };
+    }),
+    o: "fortune-analysis-" + $data.lastUpdateTime
   } : {}, {
-    l: $data.currentStep === 3
-  }, $data.currentStep === 3 ? {
-    m: common_vendor.f($data.liuyaoLines, (yao, index, i0) => {
-      return {
-        a: common_vendor.t(yao.name),
-        b: index,
-        c: yao.show ? 1 : "",
-        d: yao.type === "yang" ? 1 : "",
-        e: yao.type === "yin" ? 1 : ""
-      };
+    p: $data.showReport
+  }, $data.showReport ? {
+    q: common_vendor.f($data.reportItems, (reportItem, index, i0) => {
+      return common_vendor.e({
+        a: index === 0
+      }, index === 0 ? {} : {}, {
+        b: index === 1
+      }, index === 1 ? {
+        c: common_vendor.t($data.fortune.overall)
+      } : {}, {
+        d: index === 2
+      }, index === 2 ? common_vendor.e({
+        e: _ctx.key !== "overall"
+      }, _ctx.key !== "overall" ? {
+        f: common_vendor.f($data.fortune, (value, key, i1) => {
+          return {
+            a: common_vendor.t($options.getFortuneTitle(key)),
+            b: common_vendor.t(value),
+            c: "section-item-" + key
+          };
+        })
+      } : {}) : {}, {
+        g: index === 3
+      }, index === 3 ? {} : {}, {
+        h: reportItem.show ? 1 : "",
+        i: "report-item-" + index
+      });
     }),
-    n: common_vendor.f($data.calculationLines, (line, index, i0) => {
-      return {
-        a: common_vendor.t(line.text),
-        b: index,
-        c: line.show ? 1 : ""
-      };
-    })
-  } : {}, {
-    o: $data.currentStep === 4
-  }, $data.currentStep === 4 ? {
-    p: common_vendor.f($data.meihuaPetals, (petal, index, i0) => {
-      return {
-        a: common_vendor.t(petal.text),
-        b: index,
-        c: petal.show ? 1 : ""
-      };
-    }),
-    q: common_vendor.f($data.calculationLines, (line, index, i0) => {
-      return {
-        a: common_vendor.t(line.text),
-        b: index,
-        c: line.show ? 1 : ""
-      };
-    })
-  } : {}, {
-    r: $data.currentStep === 5
-  }, $data.currentStep === 5 ? {
-    s: common_vendor.f($data.taiyiStars, (star, index, i0) => {
-      return {
-        a: common_vendor.t(star.text),
-        b: index,
-        c: star.show ? 1 : ""
-      };
-    }),
-    t: common_vendor.f($data.calculationLines, (line, index, i0) => {
-      return {
-        a: common_vendor.t(line.text),
-        b: index,
-        c: line.show ? 1 : ""
-      };
-    })
-  } : {}, {
-    v: $data.currentStep === 6
-  }, $data.currentStep === 6 ? {
-    w: common_vendor.f($data.liurenPalaces, (palace, index, i0) => {
-      return {
-        a: common_vendor.t(palace.text),
-        b: index,
-        c: palace.show ? 1 : ""
-      };
-    }),
-    x: common_vendor.f($data.calculationLines, (line, index, i0) => {
-      return {
-        a: common_vendor.t(line.text),
-        b: index,
-        c: line.show ? 1 : ""
-      };
-    })
-  } : {}, {
-    y: $data.currentStep === 7
-  }, $data.currentStep === 7 ? {
-    z: common_vendor.f($data.zeriDays, (day, index, i0) => {
-      return {
-        a: common_vendor.t(day.text),
-        b: index,
-        c: day.show ? 1 : "",
-        d: day.lucky ? 1 : ""
-      };
-    }),
-    A: common_vendor.f($data.calculationLines, (line, index, i0) => {
-      return {
-        a: common_vendor.t(line.text),
-        b: index,
-        c: line.show ? 1 : ""
-      };
-    })
-  } : {}, {
-    B: $data.currentStep === 8
-  }, $data.currentStep === 8 ? {
-    C: common_vendor.f($data.fengshuiDirections, (dir, index, i0) => {
-      return {
-        a: common_vendor.t(dir.text),
-        b: index,
-        c: dir.show ? 1 : "",
-        d: dir.lucky ? 1 : ""
-      };
-    }),
-    D: common_vendor.f($data.calculationLines, (line, index, i0) => {
-      return {
-        a: common_vendor.t(line.text),
-        b: index,
-        c: line.show ? 1 : ""
-      };
-    })
-  } : {}) : {}, {
-    E: !$data.showAnimation && $data.showFortune
-  }, !$data.showAnimation && $data.showFortune ? {
-    F: common_vendor.t($data.currentDate),
-    G: $data.fortuneData.bazi.career + "%",
-    H: common_vendor.t($data.fortuneData.bazi.career),
-    I: $data.fortuneData.bazi.wealth + "%",
-    J: common_vendor.t($data.fortuneData.bazi.wealth),
-    K: $data.fortuneData.bazi.relationship + "%",
-    L: common_vendor.t($data.fortuneData.bazi.relationship),
-    M: $data.fortuneData.ziwei.minggong + "%",
-    N: common_vendor.t($data.fortuneData.ziwei.minggong),
-    O: $data.fortuneData.ziwei.shengong + "%",
-    P: common_vendor.t($data.fortuneData.ziwei.shengong),
-    Q: $data.fortuneData.qimen.tianpan + "%",
-    R: common_vendor.t($data.fortuneData.qimen.tianpan),
-    S: $data.fortuneData.qimen.dipan + "%",
-    T: common_vendor.t($data.fortuneData.qimen.dipan),
-    U: common_vendor.t($data.fortuneData.advice.good.join("、")),
-    V: common_vendor.t($data.fortuneData.advice.bad.join("、"))
-  } : {});
+    r: common_vendor.o((...args) => $options.recalculate && $options.recalculate(...args)),
+    s: common_vendor.o((...args) => $options.goToHome && $options.goToHome(...args)),
+    t: "final-report-" + $data.lastUpdateTime
+  } : {}));
 }
 const MiniProgramPage = /* @__PURE__ */ common_vendor._export_sfc(_sfc_main, [["render", _sfc_render]]);
 wx.createPage(MiniProgramPage);

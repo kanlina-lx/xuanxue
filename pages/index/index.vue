@@ -1,5 +1,6 @@
 <template>
 	<view class="container">
+		<view class="title">指南针命理</view>
 		<!-- 点击效果 -->
 		<view class="click-effect" v-for="(effect, index) in clickEffects" :key="index"
 			:style="{
@@ -46,7 +47,7 @@
 		<view class="banner">
 			<image src="/static/images/banner.png" mode="aspectFill" class="banner-image"></image>
 			<view class="banner-content">
-				<view class="banner-title">玄学命理</view>
+				<view class="banner-title">指南针命理</view>
 				<view class="banner-desc">探索命运奥秘，指引人生方向</view>
 			</view>
 		</view>

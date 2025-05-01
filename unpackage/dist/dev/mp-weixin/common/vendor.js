@@ -118,6 +118,26 @@ function parseStringStyle(cssText) {
   });
   return ret;
 }
+function normalizeClass(value) {
+  let res = "";
+  if (isString(value)) {
+    res = value;
+  } else if (isArray(value)) {
+    for (let i2 = 0; i2 < value.length; i2++) {
+      const normalized = normalizeClass(value[i2]);
+      if (normalized) {
+        res += normalized + " ";
+      }
+    }
+  } else if (isObject(value)) {
+    for (const name in value) {
+      if (value[name]) {
+        res += name + " ";
+      }
+    }
+  }
+  return res.trim();
+}
 const toDisplayString = (val) => {
   return isString(val) ? val : val == null ? "" : isArray(val) || isObject(val) && (val.toString === objectToString || !isFunction(val.toString)) ? JSON.stringify(val, replacer, 2) : String(val);
 };
@@ -5138,6 +5158,7 @@ const o$1 = (value, key) => vOn(value, key);
 const f$1 = (source, renderItem) => vFor(source, renderItem);
 const s$1 = (value) => stringifyStyle(value);
 const e$1 = (target, ...sources) => extend(target, ...sources);
+const n$1 = (value) => normalizeClass(value);
 const t$1 = (val) => toDisplayString(val);
 function createApp$1(rootComponent, rootProps = null) {
   rootComponent && (rootComponent.mpType = "app");
@@ -6036,7 +6057,7 @@ function populateParameters(fromRes, toRes) {
   const hostLanguage = (language || "").replace(/_/g, "-");
   const parameters = {
     appId: "__UNI__F0A01CC",
-    appName: "xuanxue",
+    appName: "指南针命理",
     appVersion: "1.0.0",
     appVersionCode: "100",
     appLanguage: getAppLanguage(hostLanguage),
@@ -6185,7 +6206,7 @@ const getAppBaseInfo = {
       hostSDKVersion: SDKVersion,
       hostTheme: theme,
       appId: "__UNI__F0A01CC",
-      appName: "xuanxue",
+      appName: "指南针命理",
       appVersion: "1.0.0",
       appVersionCode: "100",
       appLanguage: getAppLanguage(hostLanguage),
@@ -6900,7 +6921,7 @@ function initOnError() {
   };
 }
 function initRuntimeSocketService() {
-  const hosts = "127.0.0.1,192.168.1.11";
+  const hosts = "127.0.0.1,192.168.31.175";
   const port = "8090";
   const id = "mp-weixin_Yj48ql";
   const lazy = typeof swan !== "undefined";
@@ -7845,7 +7866,7 @@ const pages = [
   {
     path: "pages/index/index",
     style: {
-      navigationBarTitleText: "玄学运势"
+      navigationBarTitleText: "指南针命理"
     }
   },
   {
@@ -7919,7 +7940,7 @@ const pages = [
 ];
 const globalStyle = {
   navigationBarTextStyle: "white",
-  navigationBarTitleText: "玄学运势",
+  navigationBarTitleText: "指南针命理",
   navigationBarBackgroundColor: "#1a0b2e",
   backgroundColor: "#1a0b2e"
 };
@@ -8239,7 +8260,7 @@ class v {
 function I(e2) {
   return e2 && "string" == typeof e2 ? JSON.parse(e2) : e2;
 }
-const S = true, b = "mp-weixin", T = I(define_process_env_UNI_SECURE_NETWORK_CONFIG_default), A = b, P = I('{"address":["127.0.0.1","192.168.1.11"],"servePort":7001,"debugPort":9000,"initialLaunchType":"local","skipFiles":["<node_internals>/**","/Applications/HBuilderX.app/Contents/HBuilderX/plugins/unicloud/**/*.js"]}'), C = I('[{"provider":"aliyun","spaceName":"she","spaceId":"mp-161a67b5-d7d7-4949-bb74-db673547128a","clientSecret":"Rm3tdKbAP2T2iGm+iOk6TA==","endpoint":"https://api.next.bspapp.com"}]') || [];
+const S = true, b = "mp-weixin", T = I(define_process_env_UNI_SECURE_NETWORK_CONFIG_default), A = b, P = I('{"address":["127.0.0.1","192.168.31.175"],"servePort":7001,"debugPort":9000,"initialLaunchType":"remote","skipFiles":["<node_internals>/**","/Applications/HBuilderX.app/Contents/HBuilderX/plugins/unicloud/**/*.js"]}'), C = I('[{"provider":"aliyun","spaceName":"she","spaceId":"mp-161a67b5-d7d7-4949-bb74-db673547128a","clientSecret":"Rm3tdKbAP2T2iGm+iOk6TA==","endpoint":"https://api.next.bspapp.com"}]') || [];
 let O = "";
 try {
   O = "__UNI__F0A01CC";
@@ -10794,6 +10815,7 @@ exports.createSSRApp = createSSRApp;
 exports.e = e$1;
 exports.f = f$1;
 exports.index = index;
+exports.n = n$1;
 exports.nr = nr;
 exports.o = o$1;
 exports.s = s$1;
