@@ -48,12 +48,14 @@
 				</view>
 				<view class="cards-content">
 					<view class="cards-grid">
-						<view class="card-item" v-for="(card, index) in spread.cards" :key="index">
-							<view class="card-image">
+					<view class="card-item" v-for="(card, index) in spread.cards" :key="index">
+						<view class="card-image" :style="{ backgroundImage: 'url(' + card.image + ')' }">
+							<view class="card-overlay">
 								<text class="card-name">{{card.name}}</text>
 							</view>
-							<text class="card-position">{{card.position}}</text>
 						</view>
+						<text class="card-position">{{card.position}}</text>
+					</view>
 					</view>
 				</view>
 			</view>
@@ -100,6 +102,16 @@
 					</view>
 				</view>
 			</view>
+
+			<!-- AI解读结果展示 -->
+			<view class="ai-desc-card" v-if="showResult && aiDesc">
+				<view class="card-header">
+					<text class="title">AI解读结果</text>
+				</view>
+				<view class="ai-desc-content">
+					<text style="white-space: pre-line;">{{aiDesc}}</text>
+				</view>
+			</view>
 		</view>
 		
 		<!-- 占卜过程中显示的提示 -->
@@ -113,7 +125,11 @@
 </template>
 
 <script>
+
+
+
 export default {
+	// AI解析相关配置
 	data() {
 		return {
 			question: '',
@@ -137,23 +153,51 @@ export default {
 				speedY: (Math.random() - 0.5) * 0.2,
 				rotation: Math.random() * 360 // 添加旋转角度属性
 			})),
+			// 塔罗牌数据
+			tarotCards: [
+				{ id: 0, name: "愚者", image: "https://zonheng.net/tech/tarot/0.jpg-original", description: "新的开始和冒险精神" },
+				{ id: 1, name: "魔术师", image: "https://zonheng.net/tech/tarot/1.jpg-original", description: "创造力和掌控力" },
+				{ id: 2, name: "女祭司", image: "https://zonheng.net/tech/tarot/2.jpg-original", description: "直觉和内在智慧" },
+				{ id: 3, name: "女皇", image: "https://zonheng.net/tech/tarot/3.jpg-original", description: "丰饶和滋养" },
+				{ id: 4, name: "皇帝", image: "https://zonheng.net/tech/tarot/4.jpg-original", description: "权威和稳定" },
+				{ id: 5, name: "教皇", image: "https://zonheng.net/tech/tarot/5.jpg-original", description: "精神指导和传统" },
+				{ id: 6, name: "恋人", image: "https://zonheng.net/tech/tarot/6.jpg-original", description: "爱情和选择" },
+				{ id: 7, name: "战车", image: "https://zonheng.net/tech/tarot/7.jpg-original", description: "意志力和胜利" },
+				{ id: 8, name: "力量", image: "https://zonheng.net/tech/tarot/8.jpg-original", description: "勇气和内在力量" },
+				{ id: 9, name: "隐士", image: "https://zonheng.net/tech/tarot/9.jpg-original", description: "内省和寻求真理" },
+				{ id: 10, name: "命运之轮", image: "https://zonheng.net/tech/tarot/10.jpg-original", description: "变化和机遇" },
+				{ id: 11, name: "正义", image: "https://zonheng.net/tech/tarot/11.jpg-original", description: "平衡和公正" },
+				{ id: 12, name: "倒吊人", image: "https://zonheng.net/tech/tarot/12.jpg-original", description: "牺牲和新视角" },
+				{ id: 13, name: "死神", image: "https://zonheng.net/tech/tarot/13.jpg-original", description: "结束和新生" },
+				{ id: 14, name: "节制", image: "https://zonheng.net/tech/tarot/14.jpg-original", description: "平衡和协调" },
+				{ id: 15, name: "恶魔", image: "https://zonheng.net/tech/tarot/15.jpg-original", description: "束缚和欲望" },
+				{ id: 16, name: "塔", image: "https://zonheng.net/tech/tarot/16.jpg-original", description: "突变和启示" },
+				{ id: 17, name: "星星", image: "https://zonheng.net/tech/tarot/17.jpg-original", description: "希望和灵感" },
+				{ id: 18, name: "月亮", image: "https://zonheng.net/tech/tarot/18.jpg-original", description: "幻觉和恐惧" },
+				{ id: 19, name: "太阳", image: "https://zonheng.net/tech/tarot/19.jpg-original", description: "成功和光明" },
+				{ id: 20, name: "审判", image: "https://zonheng.net/tech/tarot/20.jpg-original", description: "重生和觉醒" },
+				{ id: 21, name: "世界", image: "https://zonheng.net/tech/tarot/21.jpg-original", description: "完成和圆满" }
+			],
 			spread: {
 				name: '三张牌阵',
 				cards: [
 					{
 						name: '愚者',
 						position: '过去',
-						meaning: '代表新的开始和冒险精神'
+						meaning: '代表新的开始和冒险精神',
+						image: "https://zonheng.net/tech/tarot/0.jpg-original"
 					},
 					{
 						name: '女祭司',
 						position: '现在',
-						meaning: '代表直觉和内在智慧'
+						meaning: '代表直觉和内在智慧',
+						image: "https://zonheng.net/tech/tarot/2.jpg-original"
 					},
 					{
 						name: '太阳',
 						position: '未来',
-						meaning: '代表成功和光明前景'
+						meaning: '代表成功和光明前景',
+						image: "https://zonheng.net/tech/tarot/19.jpg-original"
 					}
 				]
 			},
@@ -165,7 +209,8 @@ export default {
 					{type: 'good', content: '多关注内心感受'},
 					{type: 'bad', content: '避免过度理想化'}
 				]
-			}
+			},
+			aiDesc: '' // 新增字段用于展示AI解读
 		}
 	},
 	mounted() {
@@ -190,6 +235,19 @@ export default {
 	},
 	
 	methods: {
+		// 获取随机塔罗牌
+		getRandomCards(count) {
+			// 复制塔罗牌数组以避免修改原始数据
+			const cards = [...this.tarotCards];
+			// 洗牌算法
+			for (let i = cards.length - 1; i > 0; i--) {
+				const j = Math.floor(Math.random() * (i + 1));
+				[cards[i], cards[j]] = [cards[j], cards[i]];
+			}
+			// 返回指定数量的牌
+			return cards.slice(0, count);
+		},
+		
 		// 星星随机运动
 		startStarsMovement() {
 			// 清除可能存在的旧定时器
@@ -280,7 +338,7 @@ export default {
 								this.fadeOutStars = true;
 								
 								// 8. 动画结束后显示结果
-								setTimeout(() => {
+								setTimeout(async () => {
 									// 重置动画状态
 									this.isStarsMoving = false;
 									this.showCelestialShift = false;
@@ -288,6 +346,39 @@ export default {
 									this.flickerStars = false;
 									this.fadeOutStars = false;
 									
+									// 获取随机塔罗牌并设置牌阵
+									const randomCards = this.getRandomCards(3);
+									
+									// 设置新的牌阵
+									this.spread.cards = [
+										{
+											name: randomCards[0].name,
+											position: '过去',
+											meaning: randomCards[0].description,
+											image: randomCards[0].image
+										},
+										{
+											name: randomCards[1].name,
+											position: '现在',
+											meaning: randomCards[1].description,
+											image: randomCards[1].image
+										},
+										{
+											name: randomCards[2].name,
+											position: '未来',
+											meaning: randomCards[2].description,
+											image: randomCards[2].image
+										}
+									];
+									
+									// AI解读测试调用
+									const testResult = [
+										{ no: randomCards[0].id, isReversed: false, position: '过去' },
+										{ no: randomCards[1].id, isReversed: false, position: '现在' },
+										{ no: randomCards[2].id, isReversed: false, position: '未来' }
+									];
+									this.aiDesc = await this.getDesc(testResult, this.question);
+
 									// 显示结果并隐藏提示
 									this.showResult = true;
 									this.hideContent = false;
@@ -317,6 +408,59 @@ export default {
 					this.flickerSequence();
 				}
 			}, 300 + Math.random() * 300);
+		},
+
+		// AI塔罗解读方法，uni.request实现
+		async getDesc(result, question) {
+			const cardDescriptions = result.map(card => {
+				const cardInfo = this.tarotCards.find(c => c.id === card.no);
+				return `牌名：${cardInfo.name}（${card.isReversed ? '逆位' : '正位'}），位置：${card.position}`;
+			}).join('\n');
+
+			const payload = {
+				model: 'qwen/qwen3-30b-a3b:free',
+				messages: [
+					{
+						role: 'system',
+						content: '现在你是塔罗牌大师，根据我所选的牌去根据问题去解析，使用的是22张大阿尔克那牌，{"0": "愚者","1": "魔术师","2": "女祭司","3": "皇后",' +
+							'"4": "皇帝","5": "教皇","6": "恋人","7": "战车","8": "力量","9": "隐士","10": "命运之轮","11": "正义","12": "倒吊人","13": "死神",' +
+							'"14": "节制","15": "恶魔","16": "塔","17": "星星","18": "月亮","19": "太阳","20": "审判","21": "世界"}，下面我将以数组的形式给你卡牌，' +
+							'其中isReversed代表是否为逆位，no为从 0 到 21 对应的22张大阿尔克那牌，你在解析的时候，需要把0-21用22张大阿尔克那牌对应的名称回答，你只需要解释卡牌的' +
+							'含义及解析，最后结尾用百分比表示问题的概率，不用回答多余的话。请遵循：1. 解释每张牌在对应位置的含义 2. 结合正逆位分析 3. 综合三张牌的关系 4. 最后给出概率百分比'
+					},
+					{
+						role: 'user',
+						content: `用户问题：${question}\n抽取牌组：\n${cardDescriptions}\n\n请按照以下格式输出：\n【牌组解析】\n[每张牌的详细解读]\n\n【综合分析】\n[整体运势解读]\n\n【概率预测】\nXX%`
+					}
+				],
+				temperature: 0.7,
+				max_tokens: 500
+			};
+
+			return new Promise((resolve, reject) => {
+				uni.request({
+					url: 'https://openrouter.ai/api/v1/chat/completions',
+					method: 'POST',
+					header: {
+						'Content-Type': 'application/json',
+						'Authorization': 'Bearer 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'
+					},
+					data: payload,
+					success: (res) => {
+						if (res.statusCode === 200 && res.data && res.data.choices && res.data.choices[0] && res.data.choices[0].message) {
+							resolve(res.data.choices[0].message.content);
+						} else {
+							uni.showToast({ title: 'AI解读失败', icon: 'none' });
+							resolve(null);
+						}
+					},
+					fail: (err) => {
+						console.error('AI解读失败:', err);
+						uni.showToast({ title: '解读失败，请重试', icon: 'none' });
+						resolve(null);
+					}
+				});
+			});
 		}
 	}
 }
@@ -756,7 +900,9 @@ export default {
 .cards-grid {
 	display: grid;
 	grid-template-columns: repeat(3, 1fr);
-	gap: 20rpx;
+	gap: 30rpx;
+	width: 100%;
+	justify-items: center;
 }
 
 .card-item {
@@ -767,20 +913,41 @@ export default {
 }
 
 .card-image {
-	width: 120rpx;
-	height: 200rpx;
-	background: rgba(255,255,255,0.03);
+	width: 160rpx;
+	height: 280rpx;
+	background-size: cover;
+	background-position: center;
 	border-radius: 10rpx;
-	border: 1rpx solid rgba(255,215,0,0.1);
+	border: 2rpx solid rgba(255,215,0,0.3);
 	display: flex;
 	align-items: center;
 	justify-content: center;
+	position: relative;
+	overflow: hidden;
+	box-shadow: 0 0 15rpx rgba(255,215,0,0.2);
+}
+
+.card-overlay {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	background: rgba(0,0,0,0.3);
+	display: flex;
+	align-items: flex-end;
+	justify-content: center;
+	padding-bottom: 10rpx;
 }
 
 .card-name {
 	font-size: 24rpx;
 	color: #ffd700;
 	text-align: center;
+	background: rgba(0,0,0,0.5);
+	padding: 5rpx 10rpx;
+	border-radius: 8rpx;
+	backdrop-filter: blur(2rpx);
 }
 
 .card-position {
